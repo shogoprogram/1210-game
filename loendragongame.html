@@ -192,7 +192,10 @@
     <div id="game-container">
         <!-- Title Screen -->
         <div id="title-screen" class="screen active">
-            <h1 id="title-text">ローエンのミニドラゴンゲーム<br>(English: Mini Dragon Game in Loen)</h1>
+            <h1 id="title-text">
+                <span id="title-ja">ローエンのミニドラゴンゲーム</span>
+                <span id="title-en" style="display:none;">Mini Dragon Game in Loen</span>
+            </h1>
             <div class="button-group">
                 <button id="settings-button">設定 (Settings)</button>
                 <button id="rules-button">ルール (Rules)</button>
@@ -211,6 +214,8 @@
                 <button id="bg-color-button">背景色変更 (Change Background Color)</button>
                 <button id="attack-color-button">攻撃色変更 (Change Attack Color)</button>
                 <button id="dragon-color-button">ドラゴンの色変更 (Change Dragon Color)</button>
+            </div>
+            <div class="button-group">
                 <button id="settings-back-button">戻る (Back)</button>
             </div>
         </div>
@@ -458,7 +463,16 @@
         }
 
         function updateLanguage() {
-            document.getElementById('title-text').innerHTML = getTranslation('title-text');
+            // Update title
+            if (preferredLanguage === 'ja') {
+                document.getElementById('title-ja').style.display = 'block';
+                document.getElementById('title-en').style.display = 'none';
+            } else {
+                document.getElementById('title-ja').style.display = 'none';
+                document.getElementById('title-en').style.display = 'block';
+            }
+            // Original title-text was a single element, now it's two spans inside title-text
+            // document.getElementById('title-text').innerHTML = getTranslation('title-text');
             document.getElementById('settings-button').textContent = getTranslation('settings-button');
             document.getElementById('rules-button').textContent = getTranslation('rules-button');
             document.getElementById('start-button').textContent = getTranslation('start-button');
@@ -1000,8 +1014,6 @@
 
         // Initial setup
         loadSettings();
-        // Explicitly set text for rules back button after loadSettings/updateLanguage
-        document.getElementById('rules-back-button').textContent = getTranslation('rules-back-button');
         showScreen('title-screen'); // Start on title screen
     </script>
 </body>
