@@ -243,15 +243,12 @@
                 <ul id="rules-list">
                     <li>WASDキーでドラゴンを動かせます。</li>
                     <li>スペースキーで攻撃を撃てます。</li>
-                    <li>シンプルで分かりやすいデザインを心がけています。</li>
                     <li>コインに当たっても何も起こりません。</li>
                     <li>肉（meat）に当たると体が成長し、攻撃範囲が1マス増えます。</li>
                     <li>マッシュルームに当たると体が縮み、攻撃範囲が1マス減ります。</li>
                     <li>？肉（wonder meat）に当たるとゲームオーバーです。</li>
                     <li>敵に当たるとゲームオーバーです。</li>
-                    <li>スローアイテムに当たると、次のアイテムに当たるまで動きが遅くなります。</li>
-                    <li>ファストアイテムに当たると、次のアイテムに当たるまで動きが速くなります。</li>
-                    <li>5マス動いたらフィールド上のアイテムが新しいものに変わります。</li>
+                    <li>一定の時間がたつとアイテムが新しいものに変わります。</li>
                 </ul>
             </div>
             <button id="rules-back-button"></button>
@@ -262,10 +259,16 @@
             <h2 id="difficulty-title">難易度選択 (Select Difficulty)</h2>
             <div class="button-group">
                 <button id="difficulty-trial" data-size="5">試し (Trial) 5x5</button>
+            </div>
+            <div class="button-group">
                 <button id="difficulty-easy" data-size="9">初級 (Easy) 9x9</button>
                 <button id="difficulty-medium" data-size="15">中級 (Medium) 15x15</button>
+            </div>
+            <div class="button-group">
                 <button id="difficulty-hard" data-size="20">上級 (Hard) 20x20</button>
                 <button id="difficulty-super-hard" data-size="30">超上級 (Super Hard) 30x30</button>
+            </div>
+            <div class="button-group">
                 <button id="start-game-back-button">戻る (Back)</button>
             </div>
         </div>
@@ -309,7 +312,7 @@
         let scoreEnemies = 0;
         let scoreMeat = 0;
         let scoreCoins = 0;
-        let gameSpeed = 150; // Milliseconds per move
+        let gameSpeed = 500; // Milliseconds per move
         let minGameSpeed = 50;
         let maxGameSpeed = 300;
         let gameSpeedModifier = 1; // For slow/fast items
@@ -355,23 +358,21 @@
                 'rules-list': [
                     'WASDキーでドラゴンを動かせます。',
                     'スペースキーで攻撃を撃てます。',
-                    'シンプルで分かりやすいデザインを心がけています。',
                     'コインに当たっても何も起こりません。',
                     '肉（meat）に当たると体が成長し、攻撃範囲が1マス増えます。',
                     'マッシュルームに当たると体が縮み、攻撃範囲が1マス減ります。',
                     '？肉（wonder meat）に当たるとゲームオーバーです。',
                     '敵に当たるとゲームオーバーです。',
-                    'スローアイテムに当たると、次のアイテムに当たるまで動きが遅くなります。',
-                    'ファストアイテムに当たると、次のアイテムに当たるまで動きが速くなります。',
-                    '5マス動いたらフィールド上のアイテムが新しいものに変わります。'
+                    '一定の時間がたつとアイテムが新しいものに変わります。'
                 ],
+                'rules-back-button': '戻るback', // Added missing entry
                 'difficulty-title': '難易度選択',
                 'difficulty-trial': '試し 5x5',
                 'difficulty-easy': '初級 9x9',
                 'difficulty-medium': '中級 15x15',
                 'difficulty-hard': '上級 20x20',
                 'difficulty-super-hard': '超上級 30x30',
-                'start-game-back-button': '戻る',
+                'rules-back-button': '戻るback',
                 'score-enemies': '敵を倒したスコア:',
                 'score-meat': '肉を食べた数:',
                 'score-coins': 'コインをゲットした数:',
@@ -402,20 +403,17 @@
                 'attack-color-picker-title': 'Select Attack Color',
                 'dragon-color-picker-title': 'Select Dragon Color',
                 'color-back-button': 'Back',
-                'rules-title': 'Rules',
                 'rules-list': [
                     'Move the dragon with WASD keys.',
                     'Press the Space key to unleash an attack.',
-                    'The design aims for simplicity and clarity.',
                     'Nothing happens when you touch a Coin.',
                     'Touching Meat makes your body grow and increases attack range by 1 cell.',
                     'Touching a Mushroom shrinks your body and decreases attack range by 1 cell.',
                     'Touching Wonder Meat results in Game Over.',
                     'Touching an Enemy results in Game Over.',
-                    'Touching a Slow item slows down your movement until you touch the next item.',
-                    'Touching a Fast item speeds up your movement until you touch the next item.',
-                    'The item on the field changes after 5 moves.'
+                    'The item changes to a new one after a certain period of time.'
                 ],
+                'rules-back-button': '戻るback', // Added missing entry
                 'difficulty-title': 'Select Difficulty',
                 'difficulty-trial': 'Trial 5x5',
                 'difficulty-easy': 'Easy 9x9',
@@ -885,103 +883,109 @@
             showScreen('game-over-screen');
         }
 
-        // --- Event Listeners ---
-        document.getElementById('settings-button').addEventListener('click', () => showScreen('settings-screen'));
-        document.getElementById('rules-button').addEventListener('click', () => showScreen('rules-screen'));
-        document.getElementById('start-button').addEventListener('click', () => showScreen('start-game-screen'));
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial setup
+            loadSettings();
+            showScreen('title-screen'); // Start on title screen
 
-        document.getElementById('settings-back-button').addEventListener('click', () => showScreen('title-screen'));
-        document.getElementById('rules-back-button').addEventListener('click', () => showScreen('title-screen'));
-        document.getElementById('start-game-back-button').addEventListener('click', () => showScreen('title-screen'));
+            // --- Event Listeners ---
+            document.getElementById('settings-button').addEventListener('click', () => showScreen('settings-screen'));
+            document.getElementById('rules-button').addEventListener('click', () => showScreen('rules-screen'));
+            document.getElementById('start-button').addEventListener('click', () => showScreen('start-game-screen'));
 
-        document.getElementById('bg-color-button').addEventListener('click', () => {
-            setupColorPicker('bg-color-options', 'background');
-            showScreen('bg-color-picker-screen');
-        });
-        document.getElementById('attack-color-button').addEventListener('click', () => {
-            setupColorPicker('attack-color-options', 'attack');
-            showScreen('attack-color-picker-screen');
-        });
-        document.getElementById('dragon-color-button').addEventListener('click', () => {
-            setupColorPicker('dragon-color-options', 'dragon');
-            showScreen('dragon-color-picker-screen');
-        });
+            document.getElementById('settings-back-button').addEventListener('click', () => showScreen('title-screen'));
+            document.getElementById('rules-back-button').addEventListener('click', () => showScreen('title-screen'));
+            document.getElementById('start-game-back-button').addEventListener('click', () => showScreen('title-screen'));
 
-        document.getElementById('bg-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
-        document.getElementById('attack-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
-        document.getElementById('dragon-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
-        
-        document.getElementById('game-over-to-title-button').addEventListener('click', () => showScreen('title-screen'));
-
-        document.querySelectorAll('.language-options input[type="radio"]').forEach(radio => {
-            radio.addEventListener('change', (event) => {
-                preferredLanguage = event.target.value;
-                localStorage.setItem('preferredLanguage', preferredLanguage);
-                updateLanguage();
+            document.getElementById('bg-color-button').addEventListener('click', () => {
+                setupColorPicker('bg-color-options', 'background');
+                showScreen('bg-color-picker-screen');
             });
-        });
-
-        document.querySelectorAll('#start-game-screen button[data-size]').forEach(button => {
-            button.addEventListener('click', (event) => {
-                boardSize = parseInt(event.target.dataset.size);
-                initGame();
-                showScreen('game-screen');
+            document.getElementById('attack-color-button').addEventListener('click', () => {
+                setupColorPicker('attack-color-options', 'attack');
+                showScreen('attack-color-picker-screen');
             });
-        });
+            document.getElementById('dragon-color-button').addEventListener('click', () => {
+                setupColorPicker('dragon-color-options', 'dragon');
+                showScreen('dragon-color-picker-screen');
+            });
 
-        document.addEventListener('keydown', e => {
-            if (currentScreen !== 'game-screen') return;
+            document.getElementById('bg-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+            document.getElementById('attack-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+            document.getElementById('dragon-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+            
+            document.getElementById('game-over-to-title-button').addEventListener('click', () => showScreen('title-screen'));
 
-            if (e.key === ' ' && !isAttacking) { // Space bar for attack
-                attack();
-                e.preventDefault(); // Prevent page scrolling
-                return;
-            }
+            document.querySelectorAll('.language-options input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', (event) => {
+                    preferredLanguage = event.target.value;
+                    localStorage.setItem('preferredLanguage', preferredLanguage);
+                    updateLanguage();
+                });
+            });
 
-            if (e.key === lastKeyPressed) return; // Prevent multiple moves for same key held down
+            document.querySelectorAll('#start-game-screen button[data-size]').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    boardSize = parseInt(event.target.dataset.size);
+                    initGame();
+                    showScreen('game-screen');
+                });
+            });
 
-            let newDx = dx;
-            let newDy = dy;
+            document.addEventListener('keydown', e => {
+                if (currentScreen !== 'game-screen') return;
 
-            switch (e.key) {
-                case 'w':
-                case 'W':
-                case 'ArrowUp':
-                    if (dy !== 1) { newDx = 0; newDy = -1; }
-                    break;
-                case 's':
-                case 'S':
-                case 'ArrowDown':
-                    if (dy !== -1) { newDx = 0; newDy = 1; }
-                    break;
-                case 'a':
-                case 'A':
-                case 'ArrowLeft':
-                    if (dx !== 1) { newDx = -1; newDy = 0; }
-                    break;
-                case 'd':
-                case 'D':
-                case 'ArrowRight':
-                    if (dx !== -1) { newDx = 1; newDy = 0; }
-                    break;
-                default:
-                    return; // Ignore other keys
-            }
+                if (e.key === ' ' && !isAttacking) { // Space bar for attack
+                    attack();
+                    e.preventDefault(); // Prevent page scrolling
+                    return;
+                }
 
-            // Only update direction if it's a valid change and not opposite of current direction
-            if (newDx !== dx || newDy !== dy) {
-                dx = newDx;
-                dy = newDy;
-                lastMoveTime = performance.now(); // Reset last move time for next move from gameLoop
-            }
-            lastKeyPressed = e.key;
-        });
+                if (e.key === lastKeyPressed) return; // Prevent multiple moves for same key held down
 
-        // Reset lastKeyPressed when key is released to allow re-pressing same key for next move
-        document.addEventListener('keyup', e => {
-            if (e.key === lastKeyPressed) {
-                lastKeyPressed = '';
-            }
+                let newDx = dx;
+                let newDy = dy;
+
+                switch (e.key) {
+                    case 'w':
+                    case 'W':
+                    case 'ArrowUp':
+                        if (dy !== 1) { newDx = 0; newDy = -1; }
+                        break;
+                    case 's':
+                    case 'S':
+                    case 'ArrowDown':
+                        if (dy !== -1) { newDx = 0; newDy = 1; }
+                        break;
+                    case 'a':
+                    case 'A':
+                    case 'ArrowLeft':
+                        if (dx !== 1) { newDx = -1; newDy = 0; }
+                        break;
+                    case 'd':
+                    case 'D':
+                    case 'ArrowRight':
+                        if (dx !== -1) { newDx = 1; newDy = 0; }
+                        break;
+                    default:
+                        return; // Ignore other keys
+                }
+
+                // Only update direction if it's a valid change and not opposite of current direction
+                if (newDx !== dx || newDy !== dy) {
+                    dx = newDx;
+                    dy = newDy;
+                    lastMoveTime = performance.now(); // Reset last move time for next move from gameLoop
+                }
+                lastKeyPressed = e.key;
+            });
+
+            // Reset lastKeyPressed when key is released to allow re-pressing same key for next move
+            document.addEventListener('keyup', e => {
+                if (e.key === lastKeyPressed) {
+                    lastKeyPressed = '';
+                }
+            });
         });
 
         // Initial setup
