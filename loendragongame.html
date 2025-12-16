@@ -248,7 +248,7 @@
                 <ul id="rules-list">
                     <li>WASDキーでドラゴンを動かせます。</li>
                     <li>スペースキーで攻撃を撃てます。</li>
-
+                    <li>シンプルで分かりやすいデザインを心がけています。</li>
                     <li>コインに当たっても何も起こりません。</li>
                     <li>肉（meat）に当たると体が成長し、攻撃範囲が1マス増えます。</li>
                     <li>マッシュルームに当たると体が縮み、攻撃範囲が1マス減ります。</li>
@@ -319,7 +319,7 @@
         let scoreEnemies = 0;
         let scoreMeat = 0;
         let scoreCoins = 0;
-        let gameSpeed = 500; // Milliseconds per move
+        let gameSpeed = 150; // Milliseconds per move
         let minGameSpeed = 50;
         let maxGameSpeed = 300;
         let gameSpeedModifier = 1; // For slow/fast items
@@ -928,110 +928,108 @@
             showScreen('game-over-screen');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Initial setup
-            loadSettings();
-            showScreen('title-screen'); // Start on title screen
+        // --- Event Listeners ---
+        document.getElementById('settings-button').addEventListener('click', () => showScreen('settings-screen'));
+        document.getElementById('rules-button').addEventListener('click', () => showScreen('rules-screen'));
+        document.getElementById('start-button').addEventListener('click', () => showScreen('start-game-screen'));
 
-            // --- Event Listeners ---
-            document.getElementById('settings-button').addEventListener('click', () => showScreen('settings-screen'));
-            document.getElementById('rules-button').addEventListener('click', () => showScreen('rules-screen'));
-            document.getElementById('start-button').addEventListener('click', () => showScreen('start-game-screen'));
+        document.getElementById('settings-back-button').addEventListener('click', () => showScreen('title-screen'));
+        document.getElementById('rules-back-button').addEventListener('click', () => showScreen('title-screen'));
+        document.getElementById('start-game-back-button').addEventListener('click', () => showScreen('title-screen'));
 
-            document.getElementById('settings-back-button').addEventListener('click', () => showScreen('title-screen'));
-            document.getElementById('rules-back-button').addEventListener('click', () => showScreen('title-screen'));
-            document.getElementById('start-game-back-button').addEventListener('click', () => showScreen('title-screen'));
+        document.getElementById('bg-color-button').addEventListener('click', () => {
+            setupColorPicker('bg-color-options', 'background');
+            showScreen('bg-color-picker-screen');
+        });
+        document.getElementById('attack-color-button').addEventListener('click', () => {
+            setupColorPicker('attack-color-options', 'attack');
+            showScreen('attack-color-picker-screen');
+        });
+        document.getElementById('dragon-color-button').addEventListener('click', () => {
+            setupColorPicker('dragon-color-options', 'dragon');
+            showScreen('dragon-color-picker-screen');
+        });
 
-            document.getElementById('bg-color-button').addEventListener('click', () => {
-                setupColorPicker('bg-color-options', 'background');
-                showScreen('bg-color-picker-screen');
-            });
-            document.getElementById('attack-color-button').addEventListener('click', () => {
-                setupColorPicker('attack-color-options', 'attack');
-                showScreen('attack-color-picker-screen');
-            });
-            document.getElementById('dragon-color-button').addEventListener('click', () => {
-                setupColorPicker('dragon-color-options', 'dragon');
-                showScreen('dragon-color-picker-screen');
-            });
+        document.getElementById('bg-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+        document.getElementById('attack-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+        document.getElementById('dragon-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+        
+        document.getElementById('game-over-to-title-button').addEventListener('click', () => showScreen('title-screen'));
 
-            document.getElementById('bg-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
-            document.getElementById('attack-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
-            document.getElementById('dragon-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
-            
-            document.getElementById('game-over-to-title-button').addEventListener('click', () => showScreen('title-screen'));
-
-            document.querySelectorAll('.language-options input[type="radio"]').forEach(radio => {
-                radio.addEventListener('change', (event) => {
-                    preferredLanguage = event.target.value;
-                    localStorage.setItem('preferredLanguage', preferredLanguage);
-                    updateLanguage();
-                });
-            });
-
-            document.querySelectorAll('#start-game-screen button[data-size]').forEach(button => {
-                button.addEventListener('click', (event) => {
-                    boardSize = parseInt(event.target.dataset.size);
-                    initGame();
-                    showScreen('game-screen');
-                });
-            });
-
-            document.addEventListener('keydown', e => {
-                if (currentScreen !== 'game-screen') return;
-
-                if (e.key === ' ' && !isAttacking) { // Space bar for attack
-                    attack();
-                    e.preventDefault(); // Prevent page scrolling
-                    return;
-                }
-
-                if (e.key === lastKeyPressed) return; // Prevent multiple moves for same key held down
-
-                let newDx = dx;
-                let newDy = dy;
-
-                switch (e.key) {
-                    case 'w':
-                    case 'W':
-                    case 'ArrowUp':
-                        if (dy !== 1) { newDx = 0; newDy = -1; }
-                        break;
-                    case 's':
-                    case 'S':
-                    case 'ArrowDown':
-                        if (dy !== -1) { newDx = 0; newDy = 1; }
-                        break;
-                    case 'a':
-                    case 'A':
-                    case 'ArrowLeft':
-                        if (dx !== 1) { newDx = -1; newDy = 0; }
-                        break;
-                    case 'd':
-                    case 'D':
-                    case 'ArrowRight':
-                        if (dx !== -1) { newDx = 1; newDy = 0; }
-                        break;
-                    default:
-                        return; // Ignore other keys
-                }
-
-                // Only update direction if it's a valid change and not opposite of current direction
-                if (newDx !== dx || newDy !== dy) {
-                    dx = newDx;
-                    dy = newDy;
-                    lastMoveTime = performance.now(); // Reset last move time for next move from gameLoop
-                }
-                lastKeyPressed = e.key;
-            });
-
-            // Reset lastKeyPressed when key is released to allow re-pressing same key for next move
-            document.addEventListener('keyup', e => {
-                if (e.key === lastKeyPressed) {
-                    lastKeyPressed = '';
-                }
+        document.querySelectorAll('.language-options input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                preferredLanguage = event.target.value;
+                localStorage.setItem('preferredLanguage', preferredLanguage);
+                updateLanguage();
             });
         });
+
+        document.querySelectorAll('#start-game-screen button[data-size]').forEach(button => {
+            button.addEventListener('click', (event) => {
+                boardSize = parseInt(event.target.dataset.size);
+                initGame();
+                showScreen('game-screen');
+            });
+        });
+
+        document.addEventListener('keydown', e => {
+            if (currentScreen !== 'game-screen') return;
+
+            if (e.key === ' ' && !isAttacking) { // Space bar for attack
+                attack();
+                e.preventDefault(); // Prevent page scrolling
+                return;
+            }
+
+            if (e.key === lastKeyPressed) return; // Prevent multiple moves for same key held down
+
+            let newDx = dx;
+            let newDy = dy;
+
+            switch (e.key) {
+                case 'w':
+                case 'W':
+                case 'ArrowUp':
+                    if (dy !== 1) { newDx = 0; newDy = -1; }
+                    break;
+                case 's':
+                case 'S':
+                case 'ArrowDown':
+                    if (dy !== -1) { newDx = 0; newDy = 1; }
+                    break;
+                case 'a':
+                case 'A':
+                case 'ArrowLeft':
+                    if (dx !== 1) { newDx = -1; newDy = 0; }
+                    break;
+                case 'd':
+                case 'D':
+                case 'ArrowRight':
+                    if (dx !== -1) { newDx = 1; newDy = 0; }
+                    break;
+                default:
+                    return; // Ignore other keys
+            }
+
+            // Only update direction if it's a valid change and not opposite of current direction
+            if (newDx !== dx || newDy !== dy) {
+                dx = newDx;
+                dy = newDy;
+                lastMoveTime = performance.now(); // Reset last move time for next move from gameLoop
+            }
+            lastKeyPressed = e.key;
+        });
+
+        // Reset lastKeyPressed when key is released to allow re-pressing same key for next move
+        document.addEventListener('keyup', e => {
+            if (e.key === lastKeyPressed) {
+                lastKeyPressed = '';
+            }
+        });
+
+        // Initial setup
+        loadSettings();
+        showScreen('title-screen'); // Start on title screen
     </script>
 </body>
 </html>
