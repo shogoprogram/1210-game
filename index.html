@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>とんぴょんのポーションメーカー</title>
+    <style>
+        :root { --background-color: #f0f2f5; }
+        body { font-family: 'Arial', sans-serif; background: var(--background-color); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; transition: background 0.5s; position: relative; }
+        .hidden { display: none !important; }
+        .screen { width: 90%; max-width: 800px; background-color: rgba(255, 255, 255, 0.95); padding: 30px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); text-align: center; position: relative; }
+        h1, h2 { color: #333; margin-top: 0; }
+        p { color: #555; }
+        .main-btn { padding: 15px 40px; font-size: 1.5em; cursor: pointer; border: none; border-radius: 10px; background-color: #4CAF50; color: white; transition: transform 0.2s; }
+        .main-btn:hover { transform: scale(1.05); }
+        .back-btn { position: absolute; top: 20px; left: 20px; padding: 10px 15px; font-size: 1em; background-color: #777; }
+        .settings-section { margin-bottom: 25px; }
+        .menu-btn { display: block; width: 80%; max-width: 300px; margin: 15px auto; padding: 15px; font-size: 1.2em; }
+        #title-screen #settings-btn { position: absolute; top: 20px; right: 20px; padding: 10px 15px; font-size: 1em; background-color: #777; }
+        #title-screen h1 { font-size: 2.5em; margin-bottom: 50px; }
+        #language-buttons .lang-btn { padding: 10px 20px; font-size: 1em; margin: 5px; cursor: pointer; border: 2px solid #ccc; background-color: white; color: #333; border-radius: 8px; transition: border-color 0.3s, background-color 0.3s; }
+        #language-buttons .lang-btn.active { border-color: #4CAF50; background-color: #e8f5e9; }
+        #background-watermark { position: fixed; top: 10px; left: 10px; font-size: 1.5em; color: rgba(0, 0, 0, 0.08); pointer-events: none; }
+        #game-container, #background-settings-screen { overflow-y: auto; max-height: 90vh; }
+        .container-box { border: 2px dashed #ddd; border-radius: 10px; padding: 10px; margin-bottom: 15px; min-height: 50px; }
+        #selected-materials, #bg-selected-colors { display: flex; justify-content: center; align-items: center; gap: 10px; }
+        #materials-container, #special-materials-container, #inventory-container, #bg-base-colors, #bg-inventory-colors { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .item-btn { padding: 10px 15px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); min-width: 40px; }
+        .item-btn.color-only { width: 40px; height: 40px; padding: 0; font-size: 0; }
+        .item-btn:hover { transform: scale(1.05); }
+        .bg-color-btn { width: 40px; height: 40px; padding: 0; font-size: 0; border-radius: 8px; cursor: pointer; transition: transform 0.1s, border-color 0.2s; border: 3px solid transparent; }
+        .bg-color-btn.selected-for-apply { border-color: #007bff; transform: scale(1.1); }
+        .selected-item-display { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.2); flex-shrink: 0; cursor: pointer; transition: transform 0.2s; position: relative; display: flex; justify-content: center; align-items: center; }
+        .selected-item-display:hover { transform: scale(1.1); }
+        .selected-item-display .remove-icon { color: white; text-shadow: 0 0 3px black; font-size: 1.5em; line-height: 1; font-weight: bold; pointer-events: none; opacity: 0.5; }
+        .selected-item-display:hover .remove-icon { opacity: 1; }
+        .action-btn { padding: 10px 20px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; margin: 5px; color: white; }
+        .color-white { background-color: #f8f8f8; color: #333; border: 1px solid #ddd; } .color-black { background-color: #333; color: white; } .color-red { background-color: #f44336; color: white; } .color-blue { background-color: #2196F3; color: white; } .color-yellow{ background-color: #FFEB3B; color: #333; } .color-brown { background-color: #795548; color: white; } .color-G { background-color: #C8E6C9; color: #333; } .color-P { background-color: #E1BEE7; color: #333; } .color-AM { background: linear-gradient(45deg, #FFD700, #FFA500); color: white; }
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        #modal-content { background: white; padding: 20px; border-radius: 10px; max-height: 70vh; overflow-y: auto; }
+        #modal-list .modal-item { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        #modal-list .modal-item-preview { width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
+        #modal-list button { background-color: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: auto;}
+    </style>
+</head>
+<body>
+
+<div id="background-watermark"></div>
+
+<div id="title-screen" class="screen">
+    <button id="settings-btn" class="main-btn" style="font-size: 1em;" data-lang-key="settings_title"></button>
+    <h1 data-lang-key="title"></h1>
+    <button id="start-game-btn" class="main-btn" data-lang-key="start_button"></button>
+</div>
+
+<div id="settings-menu-screen" class="screen hidden">
+    <button class="main-btn back-btn" data-screen-target="title-screen" data-lang-key="back_button"></button>
+    <h1 data-lang-key="settings_title"></h1>
+    <button id="goto-language-btn" class="main-btn menu-btn" data-lang-key="language_title"></button>
+    <button id="goto-background-btn" class="main-btn menu-btn" data-lang-key="background_color_title"></button>
+</div>
+
+<div id="language-settings-screen" class="screen hidden">
+    <button class="main-btn back-btn" data-screen-target="settings-menu-screen" data-lang-key="back_button"></button>
+    <h1 data-lang-key="language_title"></h1>
+    <div id="language-buttons" class="settings-section">
+         <button class="lang-btn" data-lang="jp">日本語</button>
+         <button class="lang-btn" data-lang="en">English</button>
+    </div>
+</div>
+
+<div id="background-settings-screen" class="screen hidden">
+    <button id="bg-back-btn" class="main-btn back-btn" data-lang-key="back_button"></button>
+    <h1 data-lang-key="background_color_title"></h1>
+    <p data-lang-key="bg_select_for_mix"></p>
+    <div id="bg-selected-colors" class="container-box"></div>
+    <p data-lang-key="bg_select_base_color"></p>
+    <div id="bg-base-colors" class="container-box"></div>
+    <p data-lang-key="bg_inventory_title"></p>
+    <div id="bg-inventory-colors" class="container-box"></div>
+    <p data-lang-key="bg_mix_prompt"></p>
+    <div class="action-buttons">
+        <button id="bg-generate-btn" class="action-btn" style="background-color: #4CAF50;" data-lang-key="mix_button" disabled></button>
+        <button id="bg-clear-btn" class="action-btn" style="background-color: #ff9800;" data-lang-key="clear_all_button"></button>
+    </div>
+    <div id="bg-result-message" style="min-height: 40px;" data-lang-key="bg_result_placeholder"></div>
+    <div style="margin-top:20px; padding-top:20px; border-top: 2px solid #ccc;">
+        <p data-lang-key="bg_apply_prompt"></p>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 10px;">
+            <div id="bg-apply-preview" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ddd; background: #fff;"></div>
+            <button id="set-background-btn" class="main-btn" data-lang-key="bg_apply_button" style="font-size: 1em;" disabled></button>
+        </div>
+    </div>
+    <div id="admin-buttons" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+        <button id="bg-discard-btn" class="action-btn" style="background-color: #f44336;" data-lang-key="discard_color_button"></button>
+    </div>
+</div>
+
+<div id="game-container" class="screen hidden">
+    <button id="game-back-btn" class="main-btn back-btn" data-lang-key="back_button" style="font-size: 0.8em; padding: 8px 12px;"></button>
+    <h1 data-lang-key="title"></h1>
+    <div id="score-area"><span data-lang-key="points"></span>: <span id="score-display">0</span></div>
+    <p data-lang-key="selected_ingredients"></p>
+    <div id="selected-materials" class="container-box"></div>
+    <p data-lang-key="select_prompt"></p>
+    <div id="materials-container" class="container-box"></div>
+    <div id="special-materials-container" class="container-box"></div>
+    <p data-lang-key="inventory_title"></p>
+    <div id="inventory-container" class="container-box"></div>
+    <p data-lang-key="mix_prompt"></p>
+    <div class="action-buttons">
+        <button id="generate-btn" class="action-btn" disabled style="background-color: #4CAF50;" data-lang-key="mix_button"></button>
+        <button id="clear-selection-btn" class="action-btn" style="background-color: #ff9800;" data-lang-key="clear_all_button"></button>
+    </div>
+    <div id="result-display" style="min-height: 60px;">
+         <p id="result-message" data-lang-key="potion_display_placeholder"></p>
+    </div>
+    <div id="admin-buttons" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+        <button id="discard-potion-btn" class="action-btn" style="background-color: #f44336;" data-lang-key="discard_button"></button>
+        <button id="reset-game-btn" class="action-btn" style="background-color: #607d8b;" data-lang-key="reset_button"></button>
+    </div>
+</div>
+
+<div id="modal-overlay" class="hidden">
+    <div id="modal-content">
+        <h2 id="modal-title"></h2>
+        <div id="modal-list"></div>
+        <button id="close-modal-btn" class="main-btn" style="margin-top: 15px; font-size: 1em;"></button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const translations = {
+        jp: {
+            title: "とんぴょんのポーションメーカー", points: "ポイント", selected_ingredients: "選んだ材料（クリックで削除）", select_prompt: "材料を選んでください（３つまで）", mix_prompt: "材料を合成してポーションを作ろう", mix_button: "生成", potion_display_placeholder: "ここに完成した薬が表示されます", herb: "草", poison: "毒", advanced_magic: "上級魔法", white: "白", black: "黒", red: "赤", blue: "青", yellow: "黄", brown: "茶", potion_created: "ポーションが完成した！", inventory_title: "完成ポーション", clear_all_button: "全てクリア", discard_button: "ポーションを破棄", reset_button: "ゲームリセット", discard_modal_title: "破棄するポーションを選択", discard_item_button: "破棄", confirm_reset: "本当にリセットしますか？スコアと全てのポーションが削除されます。", back_button: "戻る", max_ingredients_alert: "これ以上材料は選べません。（最大3つまで）", start_button: "スタート", settings_title: "設定", language_title: "言語設定", background_color_title: "背景色設定",
+            bg_select_for_mix: "選んだ色（クリックで削除）:", bg_select_base_color: "色を選んでください:", bg_inventory_title: "完成した色:", bg_mix_prompt: "お好みの色を合成して作ろう:", bg_result_placeholder: "完成した色が表示されます", discard_color_button: "色を破棄", bg_apply_prompt: "適用する色をクリックで選択", bg_apply_button: "この色を背景色にする", color_created: "新しい色が完成した！", no_items_to_discard: "破棄するアイテムがありません",
+            confirm_exit_game: "タイトルに戻ると、スコアと作成したポーションはリセットされます。よろしいですか？", confirm_exit_bg_mixer: "メニューに戻ると、作成した色はリセットされます。よろしいですか？",
+        },
+        en: {
+            title: "Tonpyon’s Potion Maker", points: "Points", selected_ingredients: "Selected Ingredients (Click to remove)", select_prompt: "Select Ingredients (Max 3)", mix_prompt: "Mix Ingredients to Brew Potion", mix_button: "Mix", potion_display_placeholder: "Completed Potion Display", herb: "Herb", poison: "Poison", advanced_magic: "Advanced Magic", white: "White", black: "Black", red: "Red", blue: "Blue", yellow: "Yellow", brown: "Brown", potion_created: "A new potion has been brewed!", inventory_title: "Brewed Potions", clear_all_button: "Clear All", discard_button: "Discard Potion", reset_button: "Reset Game", discard_modal_title: "Select Potion to Discard", discard_item_button: "Discard", confirm_reset: "Are you sure you want to reset? Your score and all potions will be deleted.", back_button: "Back", max_ingredients_alert: "You cannot select more ingredients. (Max 3)", start_button: "Start", settings_title: "Settings", language_title: "Language", background_color_title: "Background Color Settings",
+            bg_select_for_mix: "Selected Colors (Click to remove):", bg_select_base_color: "Select a color:", bg_inventory_title: "Completed Colors:", bg_mix_prompt: "Mix and create your favorite color:", bg_result_placeholder: "The completed color will be displayed here", discard_color_button: "Discard Color", bg_apply_prompt: "Click a color to apply", bg_apply_button: "Set as Background Color", color_created: "A new color was created!", no_items_to_discard: "No items to discard",
+            confirm_exit_game: "Returning to the title screen will reset your score and brewed potions. Are you sure?", confirm_exit_bg_mixer: "Returning to the menu will reset your created colors. Are you sure?",
+        }
+    };
+
+    let currentLanguage = 'en';
+    let currentBgMaterial = { id: 'default', value: '#f0f2f5', type: 'color' };
+    let score = 0, game_selected = [], game_inventory = [], potionIdCounter = 0;
+    let bg_selected = [], bg_inventory = [], colorIdCounter = 0, bg_colorToApply = null;
+
+    const allScreens = document.querySelectorAll('.screen');
+    const langButtons = document.querySelectorAll('#language-buttons .lang-btn');
+    
+    function hexToRgb(hex) { const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return r ? { r: parseInt(r[1], 16), g: parseInt(r[2], 16), b: parseInt(r[3], 16) } : null; }
+    function showScreen(screenId) { allScreens.forEach(s => s.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
+    
+    function setLanguage(lang) {
+        currentLanguage = lang;
+        document.documentElement.lang = lang;
+        document.querySelectorAll('[data-lang-key]').forEach(el => { const key = el.getAttribute('data-lang-key'); if (translations[lang][key]) el.textContent = translations[lang][key]; });
+        document.title = translations[lang].title;
+        langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
+        mainGame.renderAllButtons();
+        bgMixer.renderButtons();
+        updateWatermark();
+    }
+
+    function setBackground(material) { currentBgMaterial = material; document.documentElement.style.setProperty('--background-color', material.value); updateWatermark(); }
+    function updateWatermark() {
+        const watermarkEl = document.getElementById('background-watermark');
+        if (currentBgMaterial.type === 'special') { watermarkEl.textContent = currentBgMaterial[`name_${currentLanguage}`]; watermarkEl.classList.remove('hidden'); } 
+        else { watermarkEl.classList.add('hidden'); }
+    }
+
+    const colorMaterials = [ { id: 'c_white', type: 'color', name_jp: translations.jp.white, name_en: translations.en.white, value: '#f8f8f8', class: 'color-white' }, { id: 'c_black', type: 'color', name_jp: translations.jp.black, name_en: translations.en.black, value: '#333333', class: 'color-black' }, { id: 'c_red', type: 'color', name_jp: translations.jp.red, name_en: translations.en.red, value: '#f44336', class: 'color-red' }, { id: 'c_blue', type: 'color', name_jp: translations.jp.blue, name_en: translations.en.blue, value: '#2196F3', class: 'color-blue' }, { id: 'c_yellow', type: 'color', name_jp: translations.jp.yellow, name_en: translations.en.yellow, value: '#FFEB3B', class: 'color-yellow' }, { id: 'c_brown', type: 'color', name_jp: translations.jp.brown, name_en: translations.en.brown, value: '#795548', class: 'color-brown' }];
+    const specialMaterials = [ { id: 's_herb', type: 'special', name_jp: translations.jp.herb, name_en: translations.en.herb, value: '#C8E6C9', class: 'color-G' }, { id: 's_poison', type: 'special', name_jp: translations.jp.poison, name_en: translations.en.poison, value: '#E1BEE7', class: 'color-P' }, { id: 's_magic', type: 'special', name_jp: translations.jp.advanced_magic, name_en: translations.en.advanced_magic, value: 'linear-gradient(45deg, #FFD700, #FFA500)', class: 'color-AM' }];
+    
+    function openModal(titleKey, items, onDiscard) {
+        document.getElementById('modal-title').textContent = translations[currentLanguage][titleKey];
+        const listEl = document.getElementById('modal-list');
+        listEl.innerHTML = '';
+        if (items.length === 0) { listEl.innerHTML = `<p>${translations[currentLanguage].no_items_to_discard}</p>`; } 
+        else { items.forEach(item => { const itemEl = document.createElement('div'); itemEl.className = 'modal-item'; const preview = document.createElement('div'); preview.className = 'modal-item-preview'; preview.style.background = item.value; const name = document.createElement('span'); name.textContent = item[`name_${currentLanguage}`] || item.name || ''; const discardBtn = document.createElement('button'); discardBtn.textContent = translations[currentLanguage].discard_item_button; discardBtn.onclick = () => onDiscard(item.id); itemEl.append(preview, name, discardBtn); listEl.appendChild(itemEl); }); }
+        document.getElementById('modal-overlay').classList.remove('hidden');
+    }
+
+    const bgMixer = {
+        baseColorsEl: document.getElementById('bg-base-colors'), inventoryEl: document.getElementById('bg-inventory-colors'), selectedEl: document.getElementById('bg-selected-colors'), generateBtn: document.getElementById('bg-generate-btn'), clearBtn: document.getElementById('bg-clear-btn'), discardBtn: document.getElementById('bg-discard-btn'), resultEl: document.getElementById('bg-result-message'), applyPreviewEl: document.getElementById('bg-apply-preview'), applyBtn: document.getElementById('set-background-btn'),
+        renderButtons() { this.baseColorsEl.innerHTML = ''; colorMaterials.forEach(c => this.baseColorsEl.appendChild(this.createColorButton(c))); this.inventoryEl.innerHTML = ''; bg_inventory.forEach(c => this.inventoryEl.appendChild(this.createColorButton(c))); },
+        createColorButton(color) { const btn = document.createElement('button'); btn.className = 'bg-color-btn item-btn color-only'; if (color.class) btn.classList.add(color.class); else btn.style.background = color.value; if (bg_colorToApply && color.id === bg_colorToApply.id) btn.classList.add('selected-for-apply'); btn.addEventListener('click', () => { this.selectColorForApply(color); this.selectColorForMix(color); }); return btn; },
+        updateSelectedDisplay() {
+            this.selectedEl.innerHTML = '';
+            bg_selected.forEach((c, i) => {
+                const div = document.createElement('div'); div.className = 'selected-item-display'; div.style.background = c.value;
+                const removeIcon = document.createElement('span'); removeIcon.className = 'remove-icon'; removeIcon.textContent = '×';
+                div.appendChild(removeIcon);
+                div.onclick = () => this.removeSelected(i);
+                this.selectedEl.appendChild(div);
+            });
+            this.generateBtn.disabled = bg_selected.length < 2;
+        },
+        selectColorForMix(color) { if (bg_selected.length < 3) { bg_selected.push(color); this.updateSelectedDisplay(); } else { alert(translations[currentLanguage].max_ingredients_alert); } },
+        removeSelected(index) { bg_selected.splice(index, 1); this.updateSelectedDisplay(); },
+        clearSelection() { bg_selected = []; this.updateSelectedDisplay(); this.resultEl.textContent = translations[currentLanguage].bg_result_placeholder; },
+        generateColor() {
+            if (bg_selected.length < 2) return; colorIdCounter++;
+            const colors = bg_selected.map(m => hexToRgb(m.value)).filter(Boolean); let finalColor = bg_selected[0].value;
+            if (colors.length > 0) { const avg = { r: Math.floor(colors.reduce((s, c) => s + c.r, 0) / colors.length), g: Math.floor(colors.reduce((s, c) => s + c.g, 0) / colors.length), b: Math.floor(colors.reduce((s, c) => s + c.b, 0) / colors.length) }; finalColor = `rgb(${avg.r}, ${avg.g}, ${avg.b})`; }
+            const newColor = { id: 'bg_' + colorIdCounter, type: 'color-custom', value: finalColor };
+            bg_inventory.push(newColor); this.clearSelection(); this.renderButtons(); this.resultEl.textContent = translations[currentLanguage].color_created;
+        },
+        openDiscardModal() { openModal('discard_color_button', bg_inventory, (id) => { bg_inventory = bg_inventory.filter(c => c.id !== id); if (bg_colorToApply && bg_colorToApply.id === id) this.selectColorForApply(null); this.renderButtons(); this.openDiscardModal(); }); },
+        selectColorForApply(color) { bg_colorToApply = color; this.updateApplySelectionDisplay(); },
+        updateApplySelectionDisplay() { this.applyPreviewEl.style.background = bg_colorToApply ? bg_colorToApply.value : '#fff'; this.applyBtn.disabled = !bg_colorToApply; this.renderButtons(); },
+        applyBackground() { if (bg_colorToApply) setBackground(bg_colorToApply); },
+        reset() { bg_selected = []; bg_inventory = []; colorIdCounter = 0; bg_colorToApply = null; this.clearSelection(); this.renderButtons(); this.updateApplySelectionDisplay(); },
+        init() { this.generateBtn.onclick = () => this.generateColor(); this.clearBtn.onclick = () => this.clearSelection(); this.discardBtn.onclick = () => this.openDiscardModal(); this.applyBtn.onclick = () => this.applyBackground(); this.renderButtons(); }
+    };
+    
+    const mainGame = {
+        scoreDisplay: document.getElementById('score-display'), resultMessage: document.getElementById('result-message'), generateBtn: document.getElementById('generate-btn'), clearBtn: document.getElementById('clear-selection-btn'), resetBtn: document.getElementById('reset-game-btn'), discardBtn: document.getElementById('discard-potion-btn'),
+        renderAllButtons() { this.renderButtons(document.getElementById('materials-container'), colorMaterials); this.renderButtons(document.getElementById('special-materials-container'), specialMaterials); this.renderButtons(document.getElementById('inventory-container'), game_inventory); },
+        renderButtons(container, list) { container.innerHTML = ''; list.forEach(item => { const btn = document.createElement('button'); btn.className = 'item-btn'; if (item.type === 'color') btn.classList.add('color-only'); else btn.textContent = item[`name_${currentLanguage}`]; if (item.class) btn.classList.add(item.class); else btn.style.background = item.value; btn.onclick = () => this.selectMaterial(item); container.appendChild(btn); }); },
+        updateSelectedDisplay() {
+            const container = document.getElementById('selected-materials'); container.innerHTML = '';
+            game_selected.forEach((item, i) => {
+                const div = document.createElement('div'); div.className = 'selected-item-display'; div.style.background = item.value;
+                const removeIcon = document.createElement('span'); removeIcon.className = 'remove-icon'; removeIcon.textContent = '×';
+                div.appendChild(removeIcon);
+                div.onclick = () => this.removeSelected(i);
+                container.appendChild(div);
+            });
+            this.generateBtn.disabled = game_selected.length < 2;
+        },
+        selectMaterial(item) { if (game_selected.length < 3) { game_selected.push(item); this.updateSelectedDisplay(); } else { alert(translations[currentLanguage].max_ingredients_alert); } },
+        removeSelected(index) { game_selected.splice(index, 1); this.updateSelectedDisplay(); },
+        clearSelection() { game_selected = []; this.updateSelectedDisplay(); this.resultMessage.textContent = translations[currentLanguage].potion_display_placeholder; },
+        generatePotion() {
+            if (game_selected.length < 2) return; score++; this.scoreDisplay.textContent = score; potionIdCounter++;
+            const colors = game_selected.map(m => hexToRgb(m.value)).filter(Boolean);
+            let finalColor = colors.length > 0 ? `rgb(${Math.floor(colors.reduce((s, c) => s + c.r, 0) / colors.length)}, ${Math.floor(colors.reduce((s, c) => s + c.g, 0) / colors.length)}, ${Math.floor(colors.reduce((s, c) => s + c.b, 0) / colors.length)})` : game_selected[0].value;
+            const newPotion = { id: 'p_' + potionIdCounter, type: 'potion', name_jp: game_selected.filter(i => i.type === 'special').map(i => `[${i.name_jp}]`).join(''), name_en: game_selected.filter(i => i.type === 'special').map(i => `[${i.name_en}]`).join(''), value: finalColor };
+            game_inventory.push(newPotion); const newPotionDiv = document.createElement('div'); newPotionDiv.className = 'selected-item-display'; newPotionDiv.style.background = newPotion.value;
+            this.resultMessage.innerHTML = translations[currentLanguage].potion_created; this.resultMessage.appendChild(document.createElement('br')); this.resultMessage.appendChild(newPotionDiv);
+            this.clearSelection(); this.renderAllButtons();
+        },
+        reset(withConfirm = true) {
+            const doReset = () => { score = 0; game_selected = []; game_inventory = []; potionIdCounter = 0; this.scoreDisplay.textContent = score; this.clearSelection(); this.renderAllButtons(); };
+            if (withConfirm) { if (confirm(translations[currentLanguage].confirm_reset)) doReset(); } 
+            else { doReset(); }
+        },
+        openDiscardModal() { openModal('discard_modal_title', game_inventory, (id) => { game_inventory = game_inventory.filter(p => p.id !== id); this.renderAllButtons(); this.openDiscardModal(); }); },
+        init() { this.generateBtn.onclick = () => this.generatePotion(); this.clearBtn.onclick = () => this.clearSelection(); this.resetBtn.onclick = () => this.reset(); this.discardBtn.onclick = () => this.openDiscardModal(); }
+    };
+
+    function initialize() {
+        document.getElementById('start-game-btn').onclick = () => showScreen('game-container');
+        document.getElementById('settings-btn').onclick = () => showScreen('settings-menu-screen');
+        document.getElementById('goto-language-btn').onclick = () => showScreen('language-settings-screen');
+        document.getElementById('goto-background-btn').onclick = () => showScreen('background-settings-screen');
+        
+        document.querySelectorAll('.back-btn[data-screen-target]').forEach(btn => btn.onclick = (e) => showScreen(e.currentTarget.dataset.screenTarget));
+
+        document.getElementById('game-back-btn').onclick = () => {
+            if (score > 0 || game_inventory.length > 0 || game_selected.length > 0) {
+                if (confirm(translations[currentLanguage].confirm_exit_game)) {
+                    mainGame.reset(false);
+                    showScreen('title-screen');
+                }
+            } else {
+                mainGame.reset(false);
+                showScreen('title-screen');
+            }
+        };
+
+        document.getElementById('bg-back-btn').onclick = () => {
+            bgMixer.reset();
+            showScreen('settings-menu-screen');
+        };
+
+        langButtons.forEach(btn => btn.onclick = (e) => setLanguage(e.currentTarget.dataset.lang));
+        document.getElementById('close-modal-btn').onclick = () => document.getElementById('modal-overlay').classList.add('hidden');
+        document.getElementById('modal-overlay').onclick = (e) => { if(e.target.id === 'modal-overlay') e.currentTarget.classList.add('hidden'); };
+        
+        mainGame.init();
+        bgMixer.init();
+        setLanguage(currentLanguage);
+        showScreen('title-screen');
+    }
+
+    initialize();
+});
+</script>
+</body>
+</html>
