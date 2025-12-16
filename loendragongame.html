@@ -328,9 +328,9 @@
         };
 
         let currentColors = {
-            background: '#000000',
-            dragon: '#4CAF50',
-            attack: '#FFD700'
+            background: '#FFFFFF', // 初期値は白
+            dragon: '#008000',    // 初期値は緑
+            attack: '#FF0000'     // 初期値は赤
         };
 
         let preferredLanguage = 'ja'; // 'ja' or 'en'
@@ -580,11 +580,12 @@
                 { x: Math.floor(boardSize / 2), y: Math.floor(boardSize / 2) }
             ];
             dx = 0; // Initial direction (not moving)
-            dy = -1; // Dragon facing up initially
+            dy = 0; // Dragon not moving initially
             lastKeyPressed = '';
             scoreEnemies = 0;
             scoreMeat = 0;
             scoreCoins = 0;
+            gameSpeed = 250; // Milliseconds per move - adjusted for slower pace
             gameSpeedModifier = 1;
             attackRange = 1;
             movesSinceLastItem = 0;
@@ -971,10 +972,7 @@
             if (newDx !== dx || newDy !== dy) {
                 dx = newDx;
                 dy = newDy;
-                // Force an immediate update/move after direction change, then wait for gameSpeed
-                updateGame();
-                drawGame();
-                lastMoveTime = performance.now(); // Reset last move time
+                lastMoveTime = performance.now(); // Reset last move time for next move from gameLoop
             }
             lastKeyPressed = e.key;
         });
