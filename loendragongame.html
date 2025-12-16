@@ -463,6 +463,7 @@
             return TEXT_CONTENT[preferredLanguage][key] || key;
         }
 
+        /*
         function updateLanguage() {
             // Update title
             if (preferredLanguage === 'ja') {
@@ -524,6 +525,7 @@
                 document.getElementById('current-item-name').textContent = getTranslation('item-' + currentItem.type);
             }
         }
+        */
 
         function showScreen(screenId) {
             document.querySelectorAll('.screen').forEach(screen => {
@@ -929,8 +931,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            alert("Script loaded!"); // Temporary alert for debugging
             // Initial setup
-            loadSettings();
+            // loadSettings();
             showScreen('title-screen'); // Start on title screen
 
             // --- Event Listeners ---
