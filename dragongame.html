@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Dragon Game in Loen</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            overflow: hidden; /* Prevent scrollbars from appearing */
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 800px; /* Increased width to accommodate larger boards */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* For overlay elements */
+        }
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #555;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin: 10px 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .screen {
+            width: 100%;
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .screen.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Title Screen */
+        #title-screen button {
+            display: block;
+            width: 60%;
+            max-width: 300px;
+            margin: 15px auto;
+        }
+
+        /* Settings Screen */
+        #settings-screen div {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        #settings-screen label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        #settings-screen select, #settings-screen input[type="color"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            margin-top: 5px;
+            width: 150px;
+            text-align: center;
+        }
+        #language-select button {
+            padding: 8px 15px;
+            margin: 5px;
+        }
+        #language-select button.active {
+            background-color: #3f8e43;
+        }
+
+        /* Rules Screen */
+        #rules-screen p {
+            text-align: left;
+            margin-bottom: 15px;
+            padding: 0 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        #rules-screen button {
+            margin-top: 20px;
+        }
+
+        /* Difficulty Screen */
+        #difficulty-screen button {
+            display: inline-block;
+            width: auto;
+            min-width: 120px;
+            margin: 10px;
+        }
+
+        /* Game Screen */
+        #game-screen {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #game-canvas {
+            border: 2px solid #4CAF50;
+            background-color: #e0ffe0; /* Default light green for game board */
+            display: block;
+            margin: 20px auto 0;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        #game-stats {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            text-align: right;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        #game-stats div {
+            margin-bottom: 5px;
+            white-space: nowrap;
+        }
+        #current-item-display {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 1em;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+            min-width: 150px; /* Ensure text fits */
+        }
+        #current-item-display span {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        /* Game Over Screen */
+        #game-over-screen h2 {
+            color: #D32F2F;
+        }
+        #game-over-screen p {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        #game-over-screen button {
+            margin-top: 20px;
+        }
+
+        /* Color Options (for select elements and styling) */
+        .color-option {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ccc;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .color-white { background-color: white; }
+        .color-black { background-color: black; }
+        .color-red { background-color: red; }
+        .color-blue { background-color: blue; }
+        .color-yellow { background-color: yellow; }
+        .color-brown { background-color: brown; }
+        .color-pink { background-color: pink; }
+        .color-lightblue { background-color: lightblue; }
+        .color-orange { background-color: orange; }
+        .color-purple { background-color: purple; }
+        .color-green { background-color: green; }
+        .color-gray { background-color: gray; }
+        .color-transparent { background-color: transparent; } /* For custom color input */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <h1 data-key="title">ローエンのミニドラゴンゲーム（Mini Dragon Game in Loen）</h1>
+            <button id="start-button" data-key="start_game">Start Game</button>
+            <button id="settings-button" data-key="settings">Settings</button>
+            <button id="rules-button" data-key="rules">Rules</button>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen">
+            <h2 data-key="settings">Settings</h2>
+
+            <div id="language-select">
+                <label data-key="language_label">Language:</label>
+                <button data-lang="en" class="active">English</button>
+                <button data-lang="ja">日本語</button>
+            </div>
+
+            <div>
+                <label data-key="background_color_label">Background Color:</label>
+                <select id="bg-color-select">
+                    <option value="white" data-key="color_white">White</option>
+                    <option value="black" data-key="color_black">Black</option>
+                    <option value="red" data-key="color_red">Red</option>
+                    <option value="blue" data-key="color_blue">Blue</option>
+                    <option value="yellow" data-key="color_yellow">Yellow</option>
+                    <option value="brown" data-key="color_brown">Brown</option>
+                    <option value="pink" data-key="color_pink">Pink</option>
+                    <option value="lightblue" data-key="color_lightblue">Light Blue</option>
+                    <option value="orange" data-key="color_orange">Orange</option>
+                    <option value="purple" data-key="color_purple">Purple</option>
+                    <option value="green" data-key="color_green">Green</option>
+                    <option value="gray" data-key="color_gray">Gray</option>
+                </select>
+            </div>
+
+            <div>
+                <label data-key="attack_color_label">Dragon Attack Color:</label>
+                <select id="attack-color-select">
+                    <option value="white" data-key="color_white">White</option>
+                    <option value="black" data-key="color_black">Black</option>
+                    <option value="red" data-key="color_red">Red</option>
+                    <option value="blue" data-key="color_blue">Blue</option>
+                    <option value="yellow" data-key="color_yellow">Yellow</option>
+                    <option value="brown" data-key="color_brown">Brown</option>
+                    <option value="pink" data-key="color_pink">Pink</option>
+                    <option value="lightblue" data-key="color_lightblue">Light Blue</option>
+                    <option value="orange" data-key="color_orange">Orange</option>
+                    <option value="purple" data-key="color_purple">Purple</option>
+                    <option value="green" data-key="color_green">Green</option>
+                    <option value="gray" data-key="color_gray">Gray</option>
+                </select>
+            </div>
+
+            <button id="settings-back-button" data-key="back">Back</button>
+        </div>
+
+        <!-- Rules Screen -->
+        <div id="rules-screen" class="screen">
+            <h2 data-key="rules">Rules</h2>
+            <p data-key="rules_content_1">
+                Welcome to Mini Dragon Game in Loen! Here's how to play:
+            </p>
+            <p data-key="rules_content_2">
+                - Use WASD keys to move your dragon.
+            </p>
+            <p data-key="rules_content_3">
+                - Press the SPACEBAR to launch an attack.
+            </p>
+            <p data-key="rules_content_4">
+                - The game board is a square grid.
+            </p>
+            <p data-key="rules_content_5">
+                - You'll encounter various items:
+            </p>
+            <p data-key="rules_content_6">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: gold;">Coin</span>: Nothing happens when you collect it.
+            </p>
+            <p data-key="rules_content_7">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: red;">Meat</span>: Eating meat makes your dragon grow longer, and your attack range increases!
+            </p>
+            <p data-key="rules_content_8">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: brown;">Mushroom</span>: Eating a mushroom makes your dragon shrink.
+            </p>
+            <p data-key="rules_content_9">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: purple;">Wonder Meat</span>: Be careful! Eating wonder meat results in an immediate Game Over.
+            </p>
+            <p data-key="rules_content_10">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: darkred;">Enemy</span>: If you collide with an enemy, it's Game Over! Use your attack to defeat them from a distance to earn points.
+            </p>
+            <p data-key="rules_content_11">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: blue;">Slow</span>: Your dragon's movement speed will slow down until you collect the next item.
+            </p>
+            <p data-key="rules_content_12">
+                &nbsp;&nbsp;&nbsp;&nbsp;- <span style="font-weight: bold; color: orange;">Fast</span>: Your dragon's movement speed will speed up until you collect the next item.
+            </p>
+            <p data-key="rules_content_13">
+                - An item will change its location and type after every 5 moves you make.
+            </p>
+            <p data-key="rules_content_14">
+                - Your goal is to defeat enemies and eat meat to grow your dragon! Good luck!"
+            </p>
+            <button id="rules-back-button" data-key="back">Back</button>
+        </div>
+
+        <!-- Difficulty Screen -->
+        <div id="difficulty-screen" class="screen">
+            <h2 data-key="select_difficulty">Select Difficulty</h2>
+            <button data-difficulty="trial" data-key="difficulty_trial">Trial (5x5)</button>
+            <button data-difficulty="beginner" data-key="difficulty_beginner">Beginner (9x9)</button>
+            <button data-difficulty="intermediate" data-key="difficulty_intermediate">Intermediate (15x15)</button>
+            <button data-difficulty="advanced" data-key="difficulty_advanced">Advanced (20x20)</button>
+            <button data-difficulty="super_advanced" data-key="difficulty_super_advanced">Super Advanced (30x30)</button>
+            <button id="difficulty-back-button" data-key="back">Back</button>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div id="game-stats">
+                <div data-key="score_label">Score: <span id="score-display">0</span></div>
+                <div data-key="meat_label">Meat Eaten: <span id="meat-display">0</span></div>
+                <div data-key="coin_label">Coins: <span id="coin-display">0</span></div>
+            </div>
+            <div id="current-item-display">
+                <span data-key="item_label">Current Item:</span> <span id="item-name-display"></span>
+            </div>
+            <canvas id="game-canvas"></canvas>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <h2 data-key="game_over">Game Over!</h2>
+            <p data-key="final_score">Final Score: <span id="final-score-display">0</span></p>
+            <p data-key="final_meat">Meat Eaten: <span id="final-meat-display">0</span></p>
+            <p data-key="final_coins">Coins Collected: <span id="final-coin-display">0</span></p>
+            <button id="restart-button" data-key="restart">Play Again</button>
+            <button id="back-to-title-button" data-key="back_to_title">Back to Title</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Game Configuration ---
+        const CELL_SIZE = 20; // Size of each cell in pixels
+        const INITIAL_DRAGON_LENGTH = 3;
+        const INITIAL_DRAGON_SPEED = 150; // Milliseconds per move
+        const SLOW_SPEED_FACTOR = 1.5;
+        const FAST_SPEED_FACTOR = 0.6;
+        const MOVES_BEFORE_ITEM_CHANGE = 5;
+        const ATTACK_DURATION = 100; // Milliseconds for attack animation/effect
+
+        const ITEM_TYPES = {
+            MEAT: 'meat',
+            ENEMY: 'enemy',
+            MUSHROOM: 'mushroom',
+            WONDER_MEAT: 'wonder_meat',
+            SLOW: 'slow',
+            FAST: 'fast',
+            COIN: 'coin'
+        };
+
+        const ITEM_PROBABILITIES = [
+            { type: ITEM_TYPES.MEAT, probability: 30 },
+            { type: ITEM_TYPES.ENEMY, probability: 20 }, // Changed from 15%
+            { type: ITEM_TYPES.MUSHROOM, probability: 10 },
+            { type: ITEM_TYPES.WONDER_MEAT, probability: 10 },
+            { type: ITEM_TYPES.SLOW, probability: 5 },
+            { type: ITEM_TYPES.FAST, probability: 10 },
+            { type: ITEM_TYPES.COIN, probability: 20 }
+        ];
+
+        // --- Game State Variables ---
+        let currentScreen = 'title';
+        let language = 'en'; // Default language
+        let backgroundColor = 'lightgreen'; // Default game board color
+        let attackColor = 'white'; // Default dragon attack color
+        let BOARD_SIZE = 5; // Default for trial
+        let boardCells = BOARD_SIZE;
+
+        let canvas, ctx;
+        let dragon = [];
+        let direction = 'up'; // 'up', 'down', 'left', 'right'
+        let currentSpeed = INITIAL_DRAGON_SPEED;
+        let gameIntervalId;
+        let item = null;
+        let score = 0;
+        let meatCount = 0;
+        let coinCount = 0;
+        let movesSinceLastItemChange = 0;
+        let isAttacking = false;
+        let dragonAttackRange = 1; // Initial attack range
+        let pendingDirection = null; // To prevent rapid double key presses
+
+        // --- DOM Elements ---
+        const screens = document.querySelectorAll('.screen');
+        const titleScreen = document.getElementById('title-screen');
+        const settingsScreen = document.getElementById('settings-screen');
+        const rulesScreen = document.getElementById('rules-screen');
+        const difficultyScreen = document.getElementById('difficulty-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+
+        const languageButtons = document.querySelectorAll('#language-select button');
+        const bgColorSelect = document.getElementById('bg-color-select');
+        const attackColorSelect = document.getElementById('attack-color-select');
+
+        const scoreDisplay = document.getElementById('score-display');
+        const meatDisplay = document.getElementById('meat-display');
+        const coinDisplay = document.getElementById('coin-display');
+        const itemNameDisplay = document.getElementById('item-name-display');
+
+        const finalScoreDisplay = document.getElementById('final-score-display');
+        const finalMeatDisplay = document.getElementById('final-meat-display');
+        const finalCoinDisplay = document.getElementById('final-coin-display');
+
+        // --- Localization Texts ---
+        const translations = {
+            en: {
+                title: "Mini Dragon Game in Loen",
+                start_game: "Start Game",
+                settings: "Settings",
+                rules: "Rules",
+                back: "Back",
+                language_label: "Language:",
+                background_color_label: "Background Color:",
+                attack_color_label: "Dragon Attack Color:",
+                color_white: "White", color_black: "Black", color_red: "Red", color_blue: "Blue",
+                color_yellow: "Yellow", color_brown: "Brown", color_pink: "Pink", color_lightblue: "Light Blue",
+                color_orange: "Orange", color_purple: "Purple", color_green: "Green", color_gray: "Gray",
+                select_difficulty: "Select Difficulty",
+                difficulty_trial: "Trial (5x5)",
+                difficulty_beginner: "Beginner (9x9)",
+                difficulty_intermediate: "Intermediate (15x15)",
+                difficulty_advanced: "Advanced (20x20)",
+                difficulty_super_advanced: "Super Advanced (30x30)",
+                score_label: "Score:",
+                meat_label: "Meat Eaten:",
+                coin_label: "Coins:",
+                item_label: "Current Item:",
+                item_meat: "Meat", item_enemy: "Enemy", item_mushroom: "Mushroom",
+                item_wonder_meat: "Wonder Meat", item_slow: "Slow", item_fast: "Fast", item_coin: "Coin",
+                game_over: "Game Over!",
+                final_score: "Final Score:",
+                final_meat: "Meat Eaten:",
+                final_coins: "Coins Collected:",
+                restart: "Play Again",
+                back_to_title: "Back to Title",
+                rules_content_1: "Welcome to Mini Dragon Game in Loen! Here's how to play:",
+                rules_content_2: "- Use WASD keys to move your dragon.",
+                rules_content_3: "- Press the SPACEBAR to launch an attack.",
+                rules_content_4: "- The game board is a square grid.",
+                rules_content_5: "- You'll encounter various items:",
+                rules_content_6: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: gold;'>Coin</span>: Nothing happens when you collect it.",
+                rules_content_7: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: red;'>Meat</span>: Eating meat makes your dragon grow longer, and your attack range increases!",
+                rules_content_8: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: brown;'>Mushroom</span>: Eating a mushroom makes your dragon shrink.",
+                rules_content_9: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: purple;'>Wonder Meat</span>: Be careful! Eating wonder meat results in an immediate Game Over.",
+                rules_content_10: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: darkred;'>Enemy</span>: If you collide with an enemy, it's Game Over! Use your attack to defeat them from a distance to earn points.",
+                rules_content_11: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: blue;'>Slow</span>: Your dragon's movement speed will slow down until you collect the next item.",
+                rules_content_12: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: orange;'>Fast</span>: Your dragon's movement speed will speed up until you collect the next item.",
+                rules_content_13: "- An item will change its location and type after every 5 moves you make.",
+                rules_content_14: "- Your goal is to defeat enemies and eat meat to grow your dragon! Good luck!"
+            },
+            ja: {
+                title: "ローエンのミニドラゴンゲーム",
+                start_game: "ゲームスタート",
+                settings: "設定",
+                rules: "ルール",
+                back: "戻る",
+                language_label: "言語:",
+                background_color_label: "背景色:",
+                attack_color_label: "ドラゴンの攻撃色:",
+                color_white: "白色", color_black: "黒色", color_red: "赤色", color_blue: "青色",
+                color_yellow: "黄色", color_brown: "茶色", color_pink: "ピンク", color_lightblue: "水色",
+                color_orange: "オレンジ", color_purple: "紫色", color_green: "緑色", color_gray: "灰色",
+                select_difficulty: "難易度選択",
+                difficulty_trial: "試し (5x5)",
+                difficulty_beginner: "初級 (9x9)",
+                difficulty_intermediate: "中級 (15x15)",
+                difficulty_advanced: "上級 (20x20)",
+                difficulty_super_advanced: "超上級 (30x30)",
+                score_label: "スコア:",
+                meat_label: "食べた肉の数:",
+                coin_label: "ゲットしたコインの数:",
+                item_label: "現在のアイテム:",
+                item_meat: "肉", item_enemy: "敵", item_mushroom: "マッシュ",
+                item_wonder_meat: "？肉", item_slow: "スロー", item_fast: "ファスト", item_coin: "コイン",
+                game_over: "ゲームオーバー！",
+                final_score: "最終スコア:",
+                final_meat: "食べた肉の数:",
+                final_coins: "ゲットしたコインの数:",
+                restart: "もう一度プレイ",
+                back_to_title: "タイトルに戻る",
+                rules_content_1: "ローエンのミニドラゴンゲームへようこそ！遊び方はこちら：",
+                rules_content_2: "- WASDキーでドラゴンを動かします。",
+                rules_content_3: "- スペースキーで攻撃を撃てます。",
+                rules_content_4: "- ゲーム盤面は正方形のグリッドです。",
+                rules_content_5: "- 様々なアイテムが登場します：",
+                rules_content_6: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: gold;'>コイン</span>: 取得しても何も起こりません。",
+                rules_content_7: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: red;'>肉</span>: 肉を食べるとドラゴンが成長し、攻撃範囲が広がります！",
+                rules_content_8: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: brown;'>マッシュ</span>: マッシュを食べるとドラゴンが縮みます。",
+                rules_content_9: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: purple;'>？肉</span>: 注意！？肉を食べると即ゲームオーバーです。",
+                rules_content_10: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: darkred;'>敵</span>: 敵と衝突するとゲームオーバーです！攻撃を使って遠距離から倒し、ポイントを獲得しましょう。",
+                rules_content_11: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: blue;'>スロー</span>: 次のアイテムを取得するまでドラゴンの移動速度が遅くなります。",
+                rules_content_12: "&nbsp;&nbsp;&nbsp;&nbsp;- <span style='font-weight: bold; color: orange;'>ファスト</span>: 次のアイテムを取得するまでドラゴンの移動速度が速くなります。",
+                rules_content_13: "- 5マス移動するごとにアイテムの位置と種類が変わります。",
+                rules_content_14: "- 敵を倒し、肉を食べてドラゴンを成長させることが目標です！頑張ってください！"
+            }
+        };
+
+        // --- Functions ---
+        function switchScreen(screenId) {
+            screens.forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            currentScreen = screenId.replace('-screen', '');
+        }
+
+        function updateTexts() {
+            const currentTranslations = translations[language];
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.dataset.key;
+                if (currentTranslations[key]) {
+                    element.innerHTML = currentTranslations[key];
+                }
+            });
+            // Update current item display text specifically
+            if (item && translations[language][`item_${item.type}`]) {
+                itemNameDisplay.textContent = translations[language][`item_${item.type}`];
+            } else {
+                 itemNameDisplay.textContent = "";
+            }
+        }
+
+        function loadSettings() {
+            const savedLanguage = localStorage.getItem('language');
+            if (savedLanguage) {
+                language = savedLanguage;
+                languageButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.lang === language) {
+                        btn.classList.add('active');
+                    }
+                });
+            }
+
+            const savedBgColor = localStorage.getItem('backgroundColor');
+            if (savedBgColor) {
+                backgroundColor = savedBgColor;
+                bgColorSelect.value = savedBgColor;
+            }
+
+            const savedAttackColor = localStorage.getItem('attackColor');
+            if (savedAttackColor) {
+                attackColor = savedAttackColor;
+                attackColorSelect.value = savedAttackColor;
+            }
+            updateTexts();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('language', language);
+            localStorage.setItem('backgroundColor', backgroundColor);
+            localStorage.setItem('attackColor', attackColor);
+        }
+
+        function initGame(difficulty) {
+            clearInterval(gameIntervalId); // Clear any existing interval
+
+            switch (difficulty) {
+                case 'trial': BOARD_SIZE = 5; break;
+                case 'beginner': BOARD_SIZE = 9; break;
+                case 'intermediate': BOARD_SIZE = 15; break;
+                case 'advanced': BOARD_SIZE = 20; break;
+                case 'super_advanced': BOARD_SIZE = 30; break;
+            }
+            boardCells = BOARD_SIZE;
+
+            // Set canvas dimensions
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+            canvas.width = boardCells * CELL_SIZE;
+            canvas.height = boardCells * CELL_SIZE;
+
+            // Initialize game state
+            dragon = [];
+            const startX = Math.floor(boardCells / 2);
+            const startY = Math.floor(boardCells / 2);
+            for (let i = 0; i < INITIAL_DRAGON_LENGTH; i++) {
+                dragon.push({ x: startX, y: startY + i });
+            }
+            direction = 'up'; // Dragon starts facing up
+            currentSpeed = INITIAL_DRAGON_SPEED;
+            score = 0;
+            meatCount = 0;
+            coinCount = 0;
+            movesSinceLastItemChange = 0;
+            isAttacking = false;
+            dragonAttackRange = 1;
+            pendingDirection = null;
+
+            // Update displays
+            scoreDisplay.textContent = score;
+            meatDisplay.textContent = meatCount;
+            coinDisplay.textContent = coinCount;
+            itemNameDisplay.textContent = '';
+            canvas.style.backgroundColor = backgroundColor;
+
+            spawnRandomItem();
+            drawGame();
+            gameIntervalId = setInterval(gameLoop, currentSpeed);
+            switchScreen('game-screen');
+        }
+
+        function gameOver() {
+            clearInterval(gameIntervalId);
+            finalScoreDisplay.textContent = score;
+            finalMeatDisplay.textContent = meatCount;
+            finalCoinDisplay.textContent = coinCount;
+            switchScreen('game-over-screen');
+        }
+
+        function getRandomCoordinates() {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * boardCells);
+                y = Math.floor(Math.random() * boardCells);
+            } while (dragon.some(segment => segment.x === x && segment.y === y) || (item && item.x === x && item.y === y));
+            return { x, y };
+        }
+
+        function spawnRandomItem() {
+            const totalProbability = ITEM_PROBABILITIES.reduce((sum, item) => sum + item.probability, 0);
+            let randomNum = Math.random() * totalProbability;
+
+            let selectedItemType = null;
+            for (const p of ITEM_PROBABILITIES) {
+                randomNum -= p.probability;
+                if (randomNum < 0) {
+                    selectedItemType = p.type;
+                    break;
+                }
+            }
+
+            item = {
+                type: selectedItemType,
+                ...getRandomCoordinates()
+            };
+            movesSinceLastItemChange = 0; // Reset counter
+            updateTexts(); // Update item name display
+        }
+
+        function gameLoop() {
+            if (pendingDirection) {
+                direction = pendingDirection;
+                pendingDirection = null;
+            }
+            moveDragon();
+            drawGame();
+        }
+
+        function moveDragon() {
+            const head = { ...dragon[0] }; // Copy head to create new head
+            switch (direction) {
+                case 'up': head.y--; break;
+                case 'down': head.y++; break;
+                case 'left': head.x--; break;
+                case 'right': head.x++; break;
+            }
+
+            // Check for wall collision
+            if (head.x < 0 || head.x >= boardCells || head.y < 0 || head.y >= boardCells) {
+                gameOver();
+                return;
+            }
+
+            // Check for self-collision (excluding the last segment if not eating)
+            for (let i = 1; i < dragon.length - (item && dragon.length > INITIAL_DRAGON_LENGTH && item.x === head.x && item.y === head.y && item.type === ITEM_TYPES.MEAT ? 0 : 0); i++) {
+                 if (head.x === dragon[i].x && head.y === dragon[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+
+            dragon.unshift(head); // Add new head
+
+            // Check for item collision
+            if (item && head.x === item.x && head.y === item.y) {
+                handleItemCollision(item.type);
+                item = null; // Consume item
+            } else {
+                dragon.pop(); // Remove tail if not eating
+            }
+
+            movesSinceLastItemChange++;
+            if (movesSinceLastItemChange >= MOVES_BEFORE_ITEM_CHANGE && !item) { // Only spawn if no item on board
+                spawnRandomItem();
+            } else if (movesSinceLastItemChange >= MOVES_BEFORE_ITEM_CHANGE && item) {
+                // If there's already an item but 5 moves passed, change its location/type
+                spawnRandomItem();
+            }
+
+            // Update current item display text if it was consumed
+            if (!item) {
+                itemNameDisplay.textContent = '';
+            }
+        }
+
+        function handleItemCollision(itemType) {
+            switch (itemType) {
+                case ITEM_TYPES.MEAT:
+                    dragon.push({}); // Grow dragon by not popping tail
+                    meatCount++;
+                    score++; // Meat gives score
+                    dragonAttackRange++; // Increase attack range
+                    break;
+                case ITEM_TYPES.MUSHROOM:
+                    if (dragon.length > INITIAL_DRAGON_LENGTH) {
+                        dragon.pop(); // Shrink dragon
+                    }
+                    if (dragonAttackRange > 1) { // Reduce attack range, but not below 1
+                        dragonAttackRange--;
+                    }
+                    break;
+                case ITEM_TYPES.WONDER_MEAT:
+                    gameOver();
+                    return;
+                case ITEM_TYPES.ENEMY:
+                    // Collision with enemy without attacking is game over
+                    gameOver();
+                    return;
+                case ITEM_TYPES.COIN:
+                    coinCount++;
+                    score++; // Coin gives score
+                    break;
+                case ITEM_TYPES.SLOW:
+                    currentSpeed = INITIAL_DRAGON_SPEED * SLOW_SPEED_FACTOR;
+                    clearInterval(gameIntervalId);
+                    gameIntervalId = setInterval(gameLoop, currentSpeed);
+                    break;
+                case ITEM_TYPES.FAST:
+                    currentSpeed = INITIAL_DRAGON_SPEED * FAST_SPEED_FACTOR;
+                    clearInterval(gameIntervalId);
+                    gameIntervalId = setInterval(gameLoop, currentSpeed);
+                    break;
+            }
+            scoreDisplay.textContent = score;
+            meatDisplay.textContent = meatCount;
+            coinDisplay.textContent = coinCount;
+            updateTexts(); // Update item name display
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            canvas.style.backgroundColor = backgroundColor; // Apply background color
+
+            // Draw item
+            if (item) {
+                ctx.fillStyle = getItemColor(item.type);
+                ctx.fillRect(item.x * CELL_SIZE, item.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                // Draw text for item
+                ctx.fillStyle = 'black';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const itemText = translations[language][`item_${item.type}`] || item.type;
+                ctx.fillText(itemText, item.x * CELL_SIZE + CELL_SIZE / 2, item.y * CELL_SIZE + CELL_SIZE / 2);
+            }
+
+            // Draw dragon
+            dragon.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#3f8e43' : '#4CAF50'; // Head is slightly darker green
+                ctx.strokeStyle = '#2e6b30';
+                ctx.fillRect(segment.x * CELL_SIZE, segment.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                ctx.strokeRect(segment.x * CELL_SIZE, segment.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+
+                // Draw eyes on the head (only for the first segment)
+                if (index === 0) {
+                    ctx.fillStyle = 'white';
+                    const eyeSize = CELL_SIZE / 5;
+                    const eyeOffset = CELL_SIZE / 4;
+
+                    let eye1X = segment.x * CELL_SIZE;
+                    let eye1Y = segment.y * CELL_SIZE;
+                    let eye2X = segment.x * CELL_SIZE;
+                    let eye2Y = segment.y * CELL_SIZE;
+
+                    switch (direction) {
+                        case 'up':
+                            eye1X += eyeOffset;
+                            eye1Y += eyeOffset;
+                            eye2X += CELL_SIZE - eyeOffset - eyeSize;
+                            eye2Y += eyeOffset;
+                            break;
+                        case 'down':
+                            eye1X += eyeOffset;
+                            eye1Y += CELL_SIZE - eyeOffset - eyeSize;
+                            eye2X += CELL_SIZE - eyeOffset - eyeSize;
+                            eye2Y += CELL_SIZE - eyeOffset - eyeSize;
+                            break;
+                        case 'left':
+                            eye1X += eyeOffset;
+                            eye1Y += eyeOffset;
+                            eye2X += eyeOffset;
+                            eye2Y += CELL_SIZE - eyeOffset - eyeSize;
+                            break;
+                        case 'right':
+                            eye1X += CELL_SIZE - eyeOffset - eyeSize;
+                            eye1Y += eyeOffset;
+                            eye2X += CELL_SIZE - eyeOffset - eyeSize;
+                            eye2Y += CELL_SIZE - eyeOffset - eyeSize;
+                            break;
+                    }
+
+                    // Draw white part of the eye
+                    ctx.beginPath();
+                    ctx.arc(eye1X + eyeSize / 2, eye1Y + eyeSize / 2, eyeSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(eye2X + eyeSize / 2, eye2Y + eyeSize / 2, eyeSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw pupil
+                    ctx.fillStyle = 'black';
+                    const pupilSize = eyeSize / 2;
+                    ctx.beginPath();
+                    ctx.arc(eye1X + eyeSize / 2, eye1Y + eyeSize / 2, pupilSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(eye2X + eyeSize / 2, eye2Y + eyeSize / 2, pupilSize / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // Draw attack animation if attacking
+            if (isAttacking) {
+                drawAttack();
+            }
+        }
+
+        function getItemColor(itemType) {
+            switch (itemType) {
+                case ITEM_TYPES.MEAT: return 'red';
+                case ITEM_TYPES.ENEMY: return 'darkred';
+                case ITEM_TYPES.MUSHROOM: return 'brown';
+                case ITEM_TYPES.WONDER_MEAT: return 'purple';
+                case ITEM_TYPES.SLOW: return 'blue';
+                case ITEM_TYPES.FAST: return 'orange';
+                case ITEM_TYPES.COIN: return 'gold';
+                default: return 'gray';
+            }
+        }
+
+        function drawAttack() {
+            const head = dragon[0];
+            ctx.fillStyle = attackColor;
+
+            for (let i = 1; i <= dragonAttackRange; i++) {
+                let attackX = head.x;
+                let attackY = head.y;
+
+                switch (direction) {
+                    case 'up': attackY -= i; break;
+                    case 'down': attackY += i; break;
+                    case 'left': attackX -= i; break;
+                    case 'right': attackX += i; break;
+                }
+
+                // Draw attack visual
+                ctx.fillRect(attackX * CELL_SIZE, attackY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+        }
+
+        function handleAttack() {
+            if (isAttacking) return;
+
+            isAttacking = true;
+            drawGame(); // Immediately draw attack
+
+            setTimeout(() => {
+                isAttacking = false;
+                drawGame(); // Clear attack visual
+
+                const head = dragon[0];
+                for (let i = 1; i <= dragonAttackRange; i++) {
+                    let attackX = head.x;
+                    let attackY = head.y;
+
+                    switch (direction) {
+                        case 'up': attackY -= i; break;
+                        case 'down': attackY += i; break;
+                        case 'left': attackX -= i; break;
+                        case 'right': attackX += i; break;
+                    }
+
+                    // Check if an enemy is in the attack path
+                    if (item && item.type === ITEM_TYPES.ENEMY && item.x === attackX && item.y === attackY) {
+                        score++;
+                        scoreDisplay.textContent = score;
+                        item = null; // Enemy defeated
+                        spawnRandomItem(); // Spawn new item
+                        // Reset speed if it was affected by slow/fast
+                        currentSpeed = INITIAL_DRAGON_SPEED;
+                        clearInterval(gameIntervalId);
+                        gameIntervalId = setInterval(gameLoop, currentSpeed);
+                        return;
+                    }
+                }
+            }, ATTACK_DURATION);
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            switchScreen('title-screen'); // Start with title screen
+        });
+
+        // Title Screen Buttons
+        document.getElementById('start-button').addEventListener('click', () => switchScreen('difficulty-screen'));
+        document.getElementById('settings-button').addEventListener('click', () => switchScreen('settings-screen'));
+        document.getElementById('rules-button').addEventListener('click', () => switchScreen('rules-screen'));
+
+        // Settings Screen Buttons
+        languageButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                languageButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                language = button.dataset.lang;
+                saveSettings();
+                updateTexts();
+            });
+        });
+        bgColorSelect.addEventListener('change', (event) => {
+            backgroundColor = event.target.value;
+            saveSettings();
+            if (currentScreen === 'game') {
+                canvas.style.backgroundColor = backgroundColor;
+            }
+        });
+        attackColorSelect.addEventListener('change', (event) => {
+            attackColor = event.target.value;
+            saveSettings();
+        });
+        document.getElementById('settings-back-button').addEventListener('click', () => {
+            switchScreen('title-screen');
+            updateTexts(); // Ensure texts are updated when returning
+        });
+
+        // Rules Screen Buttons
+        document.getElementById('rules-back-button').addEventListener('click', () => {
+            switchScreen('title-screen');
+            updateTexts(); // Ensure texts are updated when returning
+        });
+
+        // Difficulty Screen Buttons
+        document.querySelectorAll('#difficulty-screen button[data-difficulty]').forEach(button => {
+            button.addEventListener('click', () => {
+                initGame(button.dataset.difficulty);
+            });
+        });
+        document.getElementById('difficulty-back-button').addEventListener('click', () => {
+            switchScreen('title-screen');
+            updateTexts(); // Ensure texts are updated when returning
+        });
+
+
+        // Game Over Screen Buttons
+        document.getElementById('restart-button').addEventListener('click', () => {
+            switchScreen('difficulty-screen'); // Go back to difficulty selection for a new game
+            updateTexts();
+        });
+        document.getElementById('back-to-title-button').addEventListener('click', () => {
+            switchScreen('title-screen');
+            updateTexts();
+        });
+
+        // Keyboard Controls
+        document.addEventListener('keydown', e => {
+            if (currentScreen !== 'game') return;
+
+            switch (e.key) {
+                case 'w':
+                case 'W':
+                    if (direction !== 'down') pendingDirection = 'up';
+                    break;
+                case 's':
+                case 'S':
+                    if (direction !== 'up') pendingDirection = 'down';
+                    break;
+                case 'a':
+                case 'A':
+                    if (direction !== 'right') pendingDirection = 'left';
+                    break;
+                case 'd':
+                case 'D':
+                    if (direction !== 'left') pendingDirection = 'right';
+                    break;
+                case ' ': // Spacebar for attack
+                    e.preventDefault(); // Prevent scrolling
+                    handleAttack();
+                    break;
+            }
+        });
+
+    </script>
+</body>
+</html>
