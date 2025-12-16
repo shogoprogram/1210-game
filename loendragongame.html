@@ -651,38 +651,29 @@
                 // Draw dragon's eye on head
                 if (index === 0) { // Head
                     ctx.fillStyle = '#000'; // Eye color
-                    let eyeRadius = cellSize / 8; // Slightly smaller base radius
-                    let eye3Radius = cellSize / 7; // Third eye slightly larger
-                    let eye1X, eye1Y, eye2X, eye2Y, eye3X, eye3Y;
+                    let eyeRadius = cellSize / 6;
+                    let eye1X, eye1Y, eye2X, eye2Y;
 
                     if (dy === -1) { // Up
-                        eye1X = segment.x * cellSize + cellSize / 5;
-                        eye1Y = segment.y * cellSize + cellSize / 5;
-                        eye2X = segment.x * cellSize + cellSize * 4 / 5;
-                        eye2Y = segment.y * cellSize + cellSize / 5;
-                        eye3X = segment.x * cellSize + cellSize / 2;
-                        eye3Y = segment.y * cellSize + cellSize * 2 / 5; // Central, slightly back
+                        eye1X = segment.x * cellSize + cellSize / 4;
+                        eye1Y = segment.y * cellSize + cellSize / 4;
+                        eye2X = segment.x * cellSize + cellSize * 3 / 4;
+                        eye2Y = segment.y * cellSize + cellSize / 4;
                     } else if (dy === 1) { // Down
-                        eye1X = segment.x * cellSize + cellSize / 5;
-                        eye1Y = segment.y * cellSize + cellSize * 4 / 5;
-                        eye2X = segment.x * cellSize + cellSize * 4 / 5;
-                        eye2Y = segment.y * cellSize + cellSize * 4 / 5;
-                        eye3X = segment.x * cellSize + cellSize / 2;
-                        eye3Y = segment.y * cellSize + cellSize * 3 / 5; // Central, slightly back
+                        eye1X = segment.x * cellSize + cellSize / 4;
+                        eye1Y = segment.y * cellSize + cellSize * 3 / 4;
+                        eye2X = segment.x * cellSize + cellSize * 3 / 4;
+                        eye2Y = segment.y * cellSize + cellSize * 3 / 4;
                     } else if (dx === -1) { // Left
-                        eye1X = segment.x * cellSize + cellSize / 5;
-                        eye1Y = segment.y * cellSize + cellSize / 5;
-                        eye2X = segment.x * cellSize + cellSize / 5;
-                        eye2Y = segment.y * cellSize + cellSize * 4 / 5;
-                        eye3X = segment.x * cellSize + cellSize * 2 / 5; // Central, slightly back
-                        eye3Y = segment.y * cellSize + cellSize / 2;
+                        eye1X = segment.x * cellSize + cellSize / 4;
+                        eye1Y = segment.y * cellSize + cellSize / 4;
+                        eye2X = segment.x * cellSize + cellSize / 4;
+                        eye2Y = segment.y * cellSize + cellSize * 3 / 4;
                     } else if (dx === 1) { // Right
-                        eye1X = segment.x * cellSize + cellSize * 4 / 5;
-                        eye1Y = segment.y * cellSize + cellSize / 5;
-                        eye2X = segment.x * cellSize + cellSize * 4 / 5;
-                        eye2Y = segment.y * cellSize + cellSize * 4 / 5;
-                        eye3X = segment.x * cellSize + cellSize * 3 / 5; // Central, slightly back
-                        eye3Y = segment.y * cellSize + cellSize / 2;
+                        eye1X = segment.x * cellSize + cellSize * 3 / 4;
+                        eye1Y = segment.y * cellSize + cellSize / 4;
+                        eye2X = segment.x * cellSize + cellSize * 3 / 4;
+                        eye2Y = segment.y * cellSize + cellSize * 3 / 4;
                     }
 
                     // Draw first eye
@@ -693,11 +684,6 @@
                     // Draw second eye
                     ctx.beginPath();
                     ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Draw third eye (central, slightly larger)
-                    ctx.beginPath();
-                    ctx.arc(eye3X, eye3Y, eye3Radius, 0, Math.PI * 2);
                     ctx.fill();
 
                     // Draw "me" text
