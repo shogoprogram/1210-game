@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ローエンのミニドラゴンゲーム</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #282c34;
+            color: #ffffff;
+            overflow: hidden;
+        }
+        #game-container {
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        .screen.active {
+            display: flex;
+        }
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #66BB6A;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            margin: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            min-width: 150px;
+        }
+        button:hover {
+            background-color: #5cb85c;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .button-group {
+            margin-top: 20px;
+        }
+        #gameCanvas {
+            border: 2px solid #4CAF50;
+            background-color: #000;
+            display: block;
+            margin: 20px auto 0;
+        }
+        #game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            font-size: 1.1em;
+            color: #E0E0E0;
+        }
+        #game-info div span {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .color-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #eee;
+            cursor: pointer;
+            display: inline-block;
+            margin: 5px;
+            vertical-align: middle;
+        }
+        .color-option.selected {
+            border-color: #4CAF50;
+            border-width: 4px;
+        }
+        .color-picker {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 15px;
+            max-width: 400px;
+        }
+        .language-options {
+            margin-bottom: 20px;
+        }
+        .language-options label {
+            margin: 0 10px;
+            font-size: 1.1em;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        #rules-text {
+            text-align: left;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+        #rules-text ul {
+            list-style: disc;
+            padding-left: 20px;
+        }
+        #rules-text li {
+            margin-bottom: 10px;
+        }
+        #game-over-screen h2 {
+            color: #FF5252;
+            margin-bottom: 15px;
+        }
+        .final-score {
+            font-size: 1.3em;
+            margin: 10px 0;
+        }
+        .final-score span {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        #item-display {
+            font-size: 1.2em;
+            color: #FFEB3B;
+            margin-top: 10px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+        }
+        #item-display span {
+            font-weight: bold;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #game-container {
+                padding: 10px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 1em;
+                min-width: 120px;
+            }
+            #rules-text {
+                padding: 15px;
+                margin: 15px auto;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Screen -->
+        <div id="title-screen" class="screen active">
+            <h1 id="title-text">ローエンのミニドラゴンゲーム<br>(English: Mini Dragon Game in Loen)</h1>
+            <div class="button-group">
+                <button id="settings-button">設定 (Settings)</button>
+                <button id="rules-button">ルール (Rules)</button>
+                <button id="start-button">スタート (Start)</button>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen">
+            <h2 id="settings-title">設定 (Settings)</h2>
+            <div class="language-options">
+                <label><input type="radio" name="language" value="ja" checked> 日本語</label>
+                <label><input type="radio" name="language" value="en"> English</label>
+            </div>
+            <div class="button-group">
+                <button id="bg-color-button">背景色変更 (Change Background Color)</button>
+                <button id="attack-color-button">攻撃色変更 (Change Attack Color)</button>
+                <button id="dragon-color-button">ドラゴンの色変更 (Change Dragon Color)</button>
+                <button id="settings-back-button">戻る (Back)</button>
+            </div>
+        </div>
+
+        <!-- Background Color Picker Screen -->
+        <div id="bg-color-picker-screen" class="screen">
+            <h2 id="bg-color-picker-title">背景色選択 (Select Background Color)</h2>
+            <div id="bg-color-options" class="color-picker"></div>
+            <button id="bg-color-back-button">戻る (Back)</button>
+        </div>
+
+        <!-- Attack Color Picker Screen -->
+        <div id="attack-color-picker-screen" class="screen">
+            <h2 id="attack-color-picker-title">攻撃色選択 (Select Attack Color)</h2>
+            <div id="attack-color-options" class="color-picker"></div>
+            <button id="attack-color-back-button">戻る (Back)</button>
+        </div>
+
+        <!-- Dragon Color Picker Screen -->
+        <div id="dragon-color-picker-screen" class="screen">
+            <h2 id="dragon-color-picker-title">ドラゴンの色選択 (Select Dragon Color)</h2>
+            <div id="dragon-color-options" class="color-picker"></div>
+            <button id="dragon-color-back-button">戻る (Back)</button>
+        </div>
+
+        <!-- Rules Screen -->
+        <div id="rules-screen" class="screen">
+            <h2 id="rules-title">ルール (Rules)</h2>
+            <div id="rules-text">
+                <ul id="rules-list">
+                    <li>WASDキーでドラゴンを動かせます。</li>
+                    <li>スペースキーで攻撃を撃てます。</li>
+                    <li>シンプルで分かりやすいデザインを心がけています。</li>
+                    <li>コインに当たっても何も起こりません。</li>
+                    <li>肉（meat）に当たると体が成長し、攻撃範囲が1マス増えます。</li>
+                    <li>マッシュルームに当たると体が縮み、攻撃範囲が1マス減ります。</li>
+                    <li>？肉（wonder meat）に当たるとゲームオーバーです。</li>
+                    <li>敵に当たるとゲームオーバーです。</li>
+                    <li>スローアイテムに当たると、次のアイテムに当たるまで動きが遅くなります。</li>
+                    <li>ファストアイテムに当たると、次のアイテムに当たるまで動きが速くなります。</li>
+                    <li>5マス動いたらフィールド上のアイテムが新しいものに変わります。</li>
+                </ul>
+            </div>
+            <button id="rules-back-button">戻る (Back)</button>
+        </div>
+
+        <!-- Start Game Screen (Difficulty Selection) -->
+        <div id="start-game-screen" class="screen">
+            <h2 id="difficulty-title">難易度選択 (Select Difficulty)</h2>
+            <div class="button-group">
+                <button id="difficulty-trial" data-size="5">試し (Trial) 5x5</button>
+                <button id="difficulty-easy" data-size="9">初級 (Easy) 9x9</button>
+                <button id="difficulty-medium" data-size="15">中級 (Medium) 15x15</button>
+                <button id="difficulty-hard" data-size="20">上級 (Hard) 20x20</button>
+                <button id="difficulty-super-hard" data-size="30">超上級 (Super Hard) 30x30</button>
+                <button id="start-game-back-button">戻る (Back)</button>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen">
+            <div id="item-display"><span id="current-item-name"></span></div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="game-info">
+                <div id="score-enemies">敵を倒したスコア: <span>0</span></div>
+                <div id="score-meat">肉を食べた数: <span>0</span></div>
+                <div id="score-coins">コインをゲットした数: <span>0</span></div>
+            </div>
+            <button id="game-back-to-title" style="display: none;">タイトルに戻る</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <h2>ゲームオーバー！ (Game Over!)</h2>
+            <p class="final-score">敵を倒したスコア: <span id="final-enemies-score">0</span></p>
+            <p class="final-score">肉を食べた数: <span id="final-meat-score">0</span></p>
+            <p class="final-score">コインをゲットした数: <span id="final-coins-score">0</span></p>
+            <button id="game-over-to-title-button">タイトルに戻る (Back to Title)</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameContainer = document.getElementById('game-container');
+
+        // Game State Variables
+        let currentScreen = 'title-screen';
+        let gameRunning = false;
+        let boardSize = 20; // Default board size
+        let cellSize; // Will be calculated based on boardSize
+        let dragon;
+        let food;
+        let dx, dy; // Direction (delta x, delta y)
+        let lastKeyPressed = ''; // To prevent continuous movement on hold
+        let scoreEnemies = 0;
+        let scoreMeat = 0;
+        let scoreCoins = 0;
+        let gameSpeed = 150; // Milliseconds per move
+        let minGameSpeed = 50;
+        let maxGameSpeed = 300;
+        let gameSpeedModifier = 1; // For slow/fast items
+        let attackRange = 1;
+        let movesSinceLastItem = 0;
+        let currentItem = null;
+        let itemMovesLimit = 5; // Item changes after this many moves
+        let isAttacking = false;
+        let attackAnimationFrame = 0;
+        const ATTACK_ANIMATION_FRAMES = 5;
+
+        // Configuration (Colors, Language)
+        const COLORS = {
+            'white': '#FFFFFF', 'black': '#000000', 'red': '#FF0000', 'blue': '#0000FF',
+            'yellow': '#FFFF00', 'brown': '#A52A2A', 'pink': '#FFC0CB', 'lightblue': '#ADD8E6',
+            'orange': '#FFA500', 'purple': '#800080', 'green': '#008000', 'gray': '#808080'
+        };
+
+        let currentColors = {
+            background: '#000000',
+            dragon: '#4CAF50',
+            attack: '#FFD700'
+        };
+
+        let preferredLanguage = 'ja'; // 'ja' or 'en'
+
+        const TEXT_CONTENT = {
+            'ja': {
+                'title-text': 'ローエンのミニドラゴンゲーム<br>(English: Mini Dragon Game in Loen)',
+                'settings-button': '設定',
+                'rules-button': 'ルール',
+                'start-button': 'スタート',
+                'settings-title': '設定',
+                'bg-color-button': '背景色変更',
+                'attack-color-button': '攻撃色変更',
+                'dragon-color-button': 'ドラゴンの色変更',
+                'settings-back-button': '戻る',
+                'bg-color-picker-title': '背景色選択',
+                'attack-color-picker-title': '攻撃色選択',
+                'dragon-color-picker-title': 'ドラゴンの色選択',
+                'color-back-button': '戻る',
+                'rules-title': 'ルール',
+                'rules-list': [
+                    'WASDキーでドラゴンを動かせます。',
+                    'スペースキーで攻撃を撃てます。',
+                    'シンプルで分かりやすいデザインを心がけています。',
+                    'コインに当たっても何も起こりません。',
+                    '肉（meat）に当たると体が成長し、攻撃範囲が1マス増えます。',
+                    'マッシュルームに当たると体が縮み、攻撃範囲が1マス減ります。',
+                    '？肉（wonder meat）に当たるとゲームオーバーです。',
+                    '敵に当たるとゲームオーバーです。',
+                    'スローアイテムに当たると、次のアイテムに当たるまで動きが遅くなります。',
+                    'ファストアイテムに当たると、次のアイテムに当たるまで動きが速くなります。',
+                    '5マス動いたらフィールド上のアイテムが新しいものに変わります。'
+                ],
+                'difficulty-title': '難易度選択',
+                'difficulty-trial': '試し 5x5',
+                'difficulty-easy': '初級 9x9',
+                'difficulty-medium': '中級 15x15',
+                'difficulty-hard': '上級 20x20',
+                'difficulty-super-hard': '超上級 30x30',
+                'start-game-back-button': '戻る',
+                'score-enemies': '敵を倒したスコア:',
+                'score-meat': '肉を食べた数:',
+                'score-coins': 'コインをゲットした数:',
+                'game-over-h2': 'ゲームオーバー！',
+                'game-over-to-title-button': 'タイトルに戻る',
+                'item-meat': '肉',
+                'item-enemy': '敵',
+                'item-mushroom': 'マッシュルーム',
+                'item-wonder-meat': '？肉',
+                'item-slow': 'スロー',
+                'item-fast': 'ファスト',
+                'item-coin': 'コイン',
+                'item-display-prefix': '現在のアイテム: ',
+                'language-ja': '日本語',
+                'language-en': 'English'
+            },
+            'en': {
+                'title-text': 'Mini Dragon Game in Loen',
+                'settings-button': 'Settings',
+                'rules-button': 'Rules',
+                'start-button': 'Start',
+                'settings-title': 'Settings',
+                'bg-color-button': 'Change Background Color',
+                'attack-color-button': 'Change Attack Color',
+                'dragon-color-button': 'Change Dragon Color',
+                'settings-back-button': 'Back',
+                'bg-color-picker-title': 'Select Background Color',
+                'attack-color-picker-title': 'Select Attack Color',
+                'dragon-color-picker-title': 'Select Dragon Color',
+                'color-back-button': 'Back',
+                'rules-title': 'Rules',
+                'rules-list': [
+                    'Move the dragon with WASD keys.',
+                    'Press the Space key to unleash an attack.',
+                    'The design aims for simplicity and clarity.',
+                    'Nothing happens when you touch a Coin.',
+                    'Touching Meat makes your body grow and increases attack range by 1 cell.',
+                    'Touching a Mushroom shrinks your body and decreases attack range by 1 cell.',
+                    'Touching Wonder Meat results in Game Over.',
+                    'Touching an Enemy results in Game Over.',
+                    'Touching a Slow item slows down your movement until you touch the next item.',
+                    'Touching a Fast item speeds up your movement until you touch the next item.',
+                    'The item on the field changes after 5 moves.'
+                ],
+                'difficulty-title': 'Select Difficulty',
+                'difficulty-trial': 'Trial 5x5',
+                'difficulty-easy': 'Easy 9x9',
+                'difficulty-medium': 'Medium 15x15',
+                'difficulty-hard': 'Hard 20x20',
+                'difficulty-super-hard': 'Super Hard 30x30',
+                'start-game-back-button': 'Back',
+                'score-enemies': 'Enemies Defeated:',
+                'score-meat': 'Meat Eaten:',
+                'score-coins': 'Coins Collected:',
+                'game-over-h2': 'Game Over!',
+                'game-over-to-title-button': 'Back to Title',
+                'item-meat': 'Meat',
+                'item-enemy': 'Enemy',
+                'item-mushroom': 'Mushroom',
+                'item-wonder-meat': 'Wonder Meat',
+                'item-slow': 'Slow',
+                'item-fast': 'Fast',
+                'item-coin': 'Coin',
+                'item-display-prefix': 'Current Item: ',
+                'language-ja': 'Japanese',
+                'language-en': 'English'
+            }
+        };
+
+        // Item definitions and probabilities
+        const ITEMS = [
+            { type: 'meat', weight: 30, color: '#FF6347' },
+            { type: 'enemy', weight: 20, color: '#DC143C' },
+            { type: 'mushroom', weight: 10, color: '#8B4513' },
+            { type: 'wonder-meat', weight: 10, color: '#4B0082' },
+            { type: 'slow', weight: 5, color: '#1E90FF' },
+            { type: 'fast', weight: 10, color: '#FFD700' },
+            { type: 'coin', weight: 20, color: '#FFC107' }
+        ];
+
+        let lastMoveTime = 0; // For controlling game speed
+
+        // --- Utility Functions ---
+        function getTranslation(key) {
+            return TEXT_CONTENT[preferredLanguage][key] || key;
+        }
+
+        function updateLanguage() {
+            document.getElementById('title-text').innerHTML = getTranslation('title-text');
+            document.getElementById('settings-button').textContent = getTranslation('settings-button');
+            document.getElementById('rules-button').textContent = getTranslation('rules-button');
+            document.getElementById('start-button').textContent = getTranslation('start-button');
+            document.getElementById('settings-title').textContent = getTranslation('settings-title');
+            document.getElementById('bg-color-button').textContent = getTranslation('bg-color-button');
+            document.getElementById('attack-color-button').textContent = getTranslation('attack-color-button');
+            document.getElementById('dragon-color-button').textContent = getTranslation('dragon-color-button');
+            document.getElementById('settings-back-button').textContent = getTranslation('settings-back-button');
+            document.getElementById('bg-color-picker-title').textContent = getTranslation('bg-color-picker-title');
+            document.getElementById('attack-color-picker-title').textContent = getTranslation('attack-color-picker-title');
+            document.getElementById('dragon-color-picker-title').textContent = getTranslation('dragon-color-picker-title');
+
+            // Update all color picker back buttons
+            document.getElementById('bg-color-back-button').textContent = getTranslation('color-back-button');
+            document.getElementById('attack-color-back-button').textContent = getTranslation('color-back-button');
+            document.getElementById('dragon-color-back-button').textContent = getTranslation('color-back-button');
+
+            document.getElementById('rules-title').textContent = getTranslation('rules-title');
+            const rulesList = document.getElementById('rules-list');
+            rulesList.innerHTML = '';
+            getTranslation('rules-list').forEach(rule => {
+                const li = document.createElement('li');
+                li.textContent = rule;
+                rulesList.appendChild(li);
+            });
+
+            document.getElementById('rules-back-button').textContent = getTranslation('rules-back-button');
+            document.getElementById('difficulty-title').textContent = getTranslation('difficulty-title');
+            document.getElementById('difficulty-trial').textContent = getTranslation('difficulty-trial');
+            document.getElementById('difficulty-easy').textContent = getTranslation('difficulty-easy');
+            document.getElementById('difficulty-medium').textContent = getTranslation('difficulty-medium');
+            document.getElementById('difficulty-hard').textContent = getTranslation('difficulty-hard');
+            document.getElementById('difficulty-super-hard').textContent = getTranslation('difficulty-super-hard');
+            document.getElementById('start-game-back-button').textContent = getTranslation('start-game-back-button');
+
+            document.getElementById('score-enemies').firstChild.nodeValue = getTranslation('score-enemies');
+            document.getElementById('score-meat').firstChild.nodeValue = getTranslation('score-meat');
+            document.getElementById('score-coins').firstChild.nodeValue = getTranslation('score-coins');
+            document.getElementById('game-over-screen').querySelector('h2').textContent = getTranslation('game-over-h2');
+            document.getElementById('game-over-to-title-button').textContent = getTranslation('game-over-to-title-button');
+
+            // Update language radio buttons
+            document.querySelector('.language-options label:nth-child(1)').childNodes[1].nodeValue = ' ' + getTranslation('language-ja');
+            document.querySelector('.language-options label:nth-child(2)').childNodes[1].nodeValue = ' ' + getTranslation('language-en');
+
+            // Update item display if visible
+            if (currentItem) {
+                document.getElementById('current-item-name').textContent = getTranslation('item-' + currentItem.type);
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+            currentScreen = screenId;
+
+            if (screenId !== 'game-screen' && gameRunning) {
+                gameRunning = false;
+            }
+            if (screenId === 'game-screen' && !gameRunning) {
+                startGameLoop();
+            }
+        }
+
+        function setupColorPicker(containerId, colorType) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear previous options
+            Object.entries(COLORS).forEach(([name, hex]) => {
+                const div = document.createElement('div');
+                div.className = 'color-option';
+                div.style.backgroundColor = hex;
+                div.title = name;
+                div.dataset.colorName = name;
+                if (currentColors[colorType] === hex) {
+                    div.classList.add('selected');
+                }
+                div.addEventListener('click', () => {
+                    currentColors[colorType] = hex;
+                    // Update selection visual
+                    container.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
+                    div.classList.add('selected');
+                    // Save to local storage
+                    localStorage.setItem('gameColors', JSON.stringify(currentColors));
+                    // Redraw if in game
+                    if (gameRunning) drawGame();
+                });
+                container.appendChild(div);
+            });
+        }
+
+        function loadSettings() {
+            const savedLanguage = localStorage.getItem('preferredLanguage');
+            if (savedLanguage) {
+                preferredLanguage = savedLanguage;
+                document.querySelector(`input[name="language"][value="${savedLanguage}"]`).checked = true;
+            }
+            const savedColors = localStorage.getItem('gameColors');
+            if (savedColors) {
+                currentColors = JSON.parse(savedColors);
+            }
+            updateLanguage();
+            setupColorPicker('bg-color-options', 'background');
+            setupColorPicker('attack-color-options', 'attack');
+            setupColorPicker('dragon-color-options', 'dragon');
+        }
+
+        // --- Game Logic ---
+        function initGame() {
+            // Adjust canvas size based on boardSize
+            const maxCanvasWidth = Math.min(gameContainer.clientWidth - 40, 700);
+            cellSize = Math.floor(maxCanvasWidth / boardSize);
+            canvas.width = boardSize * cellSize;
+            canvas.height = boardSize * cellSize;
+
+            dragon = [
+                { x: Math.floor(boardSize / 2), y: Math.floor(boardSize / 2) }
+            ];
+            dx = 0; // Initial direction (not moving)
+            dy = -1; // Dragon facing up initially
+            lastKeyPressed = '';
+            scoreEnemies = 0;
+            scoreMeat = 0;
+            scoreCoins = 0;
+            gameSpeedModifier = 1;
+            attackRange = 1;
+            movesSinceLastItem = 0;
+            isAttacking = false;
+            attackAnimationFrame = 0;
+            currentItem = null; // Clear item
+
+            generateItem(); // Place first item
+
+            document.getElementById('score-enemies').querySelector('span').textContent = scoreEnemies;
+            document.getElementById('score-meat').querySelector('span').textContent = scoreMeat;
+            document.getElementById('score-coins').querySelector('span').textContent = scoreCoins;
+            
+            document.getElementById('game-back-to-title').style.display = 'none';
+
+            gameRunning = true;
+            lastMoveTime = performance.now();
+            startGameLoop(); // Ensure loop starts on init
+        }
+
+        function startGameLoop() {
+            if (!gameRunning) return;
+
+            const now = performance.now();
+            const actualGameSpeed = gameSpeed * gameSpeedModifier;
+
+            if (now - lastMoveTime > actualGameSpeed) {
+                lastMoveTime = now;
+                updateGame();
+                drawGame();
+            }
+
+            if (gameRunning) {
+                requestAnimationFrame(startGameLoop);
+            }
+        }
+
+        function drawGame() {
+            // Draw background
+            ctx.fillStyle = currentColors.background;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid (optional, but good for debugging/visualizing)
+            // ctx.strokeStyle = '#333';
+            // for (let i = 0; i < boardSize; i++) {
+            //     ctx.beginPath();
+            //     ctx.moveTo(i * cellSize, 0);
+            //     ctx.lineTo(i * cellSize, canvas.height);
+            //     ctx.moveTo(0, i * cellSize);
+            //     ctx.lineTo(canvas.width, i * cellSize);
+            //     ctx.stroke();
+            // }
+
+            // Draw dragon
+            dragon.forEach((segment, index) => {
+                ctx.fillStyle = currentColors.dragon;
+                ctx.strokeStyle = '#000';
+                ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
+                ctx.strokeRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
+
+                // Draw dragon's eye on head
+                if (index === 0) { // Head
+                    ctx.fillStyle = '#000'; // Eye color
+                    let eyeX = segment.x * cellSize;
+                    let eyeY = segment.y * cellSize;
+                    let eyeRadius = cellSize / 6;
+
+                    if (dy === -1) { // Up
+                        eyeX += cellSize / 2;
+                        eyeY += cellSize / 4;
+                    } else if (dy === 1) { // Down
+                        eyeX += cellSize / 2;
+                        eyeY += cellSize * 3 / 4;
+                    } else if (dx === -1) { // Left
+                        eyeX += cellSize / 4;
+                        eyeY += cellSize / 2;
+                    } else if (dx === 1) { // Right
+                        eyeX += cellSize * 3 / 4;
+                        eyeY += cellSize / 2;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw "me" text
+                    ctx.fillStyle = '#FFF';
+                    ctx.font = `${cellSize / 2}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('me', segment.x * cellSize + cellSize / 2, segment.y * cellSize + cellSize / 2);
+                }
+            });
+
+            // Draw current item
+            if (currentItem) {
+                ctx.fillStyle = currentItem.color;
+                ctx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+                ctx.strokeStyle = '#fff';
+                ctx.strokeRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
+
+                // Draw item name on it (simple text for now)
+                ctx.fillStyle = '#000'; // Text color for item
+                ctx.font = `${cellSize / 3}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const itemDisplayName = getTranslation('item-' + currentItem.type);
+                // Ensure text fits within cell or abbreviate if necessary
+                let displayTxt = itemDisplayName;
+                if (ctx.measureText(displayTxt).width > cellSize - 5) {
+                    displayTxt = displayTxt.substring(0, Math.floor(cellSize / (ctx.measureText('M').width))) + '.'; // Simple abbreviation
+                    if (ctx.measureText(displayTxt).width > cellSize - 5 && displayTxt.length > 1) {
+                         displayTxt = itemDisplayName.charAt(0); // If still too long, just first char
+                    }
+                }
+                ctx.fillText(displayTxt, food.x * cellSize + cellSize / 2, food.y * cellSize + cellSize / 2);
+
+                document.getElementById('current-item-name').textContent = getTranslation('item-display-prefix') + getTranslation('item-' + currentItem.type);
+            } else {
+                document.getElementById('current-item-name').textContent = '';
+            }
+
+            // Draw attack animation if active
+            if (isAttacking && attackAnimationFrame < ATTACK_ANIMATION_FRAMES) {
+                ctx.fillStyle = currentColors.attack;
+                const head = dragon[0];
+                for (let i = 1; i <= attackRange; i++) {
+                    let attackX = head.x + dx * i;
+                    let attackY = head.y + dy * i;
+
+                    if (attackX >= 0 && attackX < boardSize && attackY >= 0 && attackY < boardSize) {
+                        // Simple pulsating effect
+                        const pulseScale = 1 - (attackAnimationFrame / ATTACK_ANIMATION_FRAMES) * 0.5;
+                        const offset = cellSize * (1 - pulseScale) / 2;
+                        ctx.fillRect(attackX * cellSize + offset, attackY * cellSize + offset, cellSize * pulseScale, cellSize * pulseScale);
+                        ctx.strokeStyle = '#FFF';
+                        ctx.strokeRect(attackX * cellSize + offset, attackY * cellSize + offset, cellSize * pulseScale, cellSize * pulseScale);
+                    }
+                }
+            }
+        }
+
+        function updateGame() {
+            if (!gameRunning) return;
+
+            const head = { x: dragon[0].x + dx, y: dragon[0].y + dy };
+
+            // Check for collision with walls
+            if (head.x < 0 || head.x >= boardSize || head.y < 0 || head.y >= boardSize) {
+                gameOver();
+                return;
+            }
+
+            // Check for collision with self (excluding the last segment, which is about to move)
+            for (let i = 1; i < dragon.length -1; i++) { // Changed to dragon.length -1
+                if (head.x === dragon[i].x && head.y === dragon[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Add new head to the beginning of the dragon array
+            dragon.unshift(head);
+
+            // Item collision
+            if (head.x === food.x && head.y === food.y) {
+                handleItemCollision(currentItem.type);
+                generateItem(); // Generate new item immediately after collision
+                movesSinceLastItem = 0; // Reset move counter
+            } else {
+                // If no food eaten, remove the tail
+                dragon.pop();
+                movesSinceLastItem++;
+                if (movesSinceLastItem >= itemMovesLimit) {
+                    generateItem();
+                    movesSinceLastItem = 0;
+                }
+            }
+
+            // Update scores
+            document.getElementById('score-enemies').querySelector('span').textContent = scoreEnemies;
+            document.getElementById('score-meat').querySelector('span').textContent = scoreMeat;
+            document.getElementById('score-coins').querySelector('span').textContent = scoreCoins;
+        }
+
+        function generateItem() {
+            let newFood;
+            let collision;
+            do {
+                newFood = {
+                    x: Math.floor(Math.random() * boardSize),
+                    y: Math.floor(Math.random() * boardSize)
+                };
+                collision = dragon.some(segment => segment.x === newFood.x && segment.y === newFood.y);
+            } while (collision);
+
+            // Weighted random item selection
+            const totalWeight = ITEMS.reduce((sum, item) => sum + item.weight, 0);
+            let randomWeight = Math.random() * totalWeight;
+            let selectedItem = null;
+            for (const item of ITEMS) {
+                randomWeight -= item.weight;
+                if (randomWeight <= 0) {
+                    selectedItem = item;
+                    break;
+                }
+            }
+            food = newFood;
+            currentItem = selectedItem;
+        }
+
+        function handleItemCollision(itemType) {
+            switch (itemType) {
+                case 'meat':
+                    // Grow dragon (don't pop tail in updateGame)
+                    scoreMeat++;
+                    attackRange = Math.max(1, attackRange + 1); // Increase attack range
+                    break;
+                case 'enemy':
+                    // This should ideally be handled by attack, but if dragon touches it, it's game over
+                    gameOver();
+                    break;
+                case 'mushroom':
+                    // Shrink dragon
+                    if (dragon.length > 1) {
+                        dragon.pop();
+                    }
+                    attackRange = Math.max(1, attackRange - 1); // Decrease attack range, minimum 1
+                    break;
+                case 'wonder-meat':
+                    gameOver();
+                    break;
+                case 'slow':
+                    gameSpeedModifier = 1.5; // Slower
+                    break;
+                case 'fast':
+                    gameSpeedModifier = 0.5; // Faster
+                    break;
+                case 'coin':
+                    scoreCoins++;
+                    // Nothing else happens as per rules
+                    break;
+            }
+        }
+
+        function attack() {
+            if (!gameRunning || isAttacking) return; // Prevent multiple concurrent attack animations
+
+            isAttacking = true;
+            attackAnimationFrame = 0;
+
+            const head = dragon[0];
+            const targets = [];
+            for (let i = 1; i <= attackRange; i++) {
+                let targetX = head.x + dx * i;
+                let targetY = head.y + dy * i;
+
+                // Ensure target is within bounds before adding
+                if (targetX >= 0 && targetX < boardSize && targetY >= 0 && targetY < boardSize) {
+                    targets.push({ x: targetX, y: targetY });
+                }
+            }
+
+            // Check if any target contains an enemy
+            let enemyHit = false;
+            if (currentItem && currentItem.type === 'enemy') {
+                for (const target of targets) {
+                    if (target.x === food.x && target.y === food.y) {
+                        scoreEnemies++;
+                        enemyHit = true;
+                        generateItem(); // Replace defeated enemy
+                        movesSinceLastItem = 0; // Reset move counter
+                        break;
+                    }
+                }
+            }
+            
+            // Advance attack animation
+            function animateAttack() {
+                if (attackAnimationFrame < ATTACK_ANIMATION_FRAMES) {
+                    attackAnimationFrame++;
+                    drawGame(); // Redraw with attack effect
+                    requestAnimationFrame(animateAttack);
+                } else {
+                    isAttacking = false;
+                    attackAnimationFrame = 0;
+                    drawGame(); // Redraw to clear attack effect
+                }
+            }
+            animateAttack();
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('final-enemies-score').textContent = scoreEnemies;
+            document.getElementById('final-meat-score').textContent = scoreMeat;
+            document.getElementById('final-coins-score').textContent = scoreCoins;
+            showScreen('game-over-screen');
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('settings-button').addEventListener('click', () => showScreen('settings-screen'));
+        document.getElementById('rules-button').addEventListener('click', () => showScreen('rules-screen'));
+        document.getElementById('start-button').addEventListener('click', () => showScreen('start-game-screen'));
+
+        document.getElementById('settings-back-button').addEventListener('click', () => showScreen('title-screen'));
+        document.getElementById('rules-back-button').addEventListener('click', () => showScreen('title-screen'));
+        document.getElementById('start-game-back-button').addEventListener('click', () => showScreen('title-screen'));
+
+        document.getElementById('bg-color-button').addEventListener('click', () => {
+            setupColorPicker('bg-color-options', 'background');
+            showScreen('bg-color-picker-screen');
+        });
+        document.getElementById('attack-color-button').addEventListener('click', () => {
+            setupColorPicker('attack-color-options', 'attack');
+            showScreen('attack-color-picker-screen');
+        });
+        document.getElementById('dragon-color-button').addEventListener('click', () => {
+            setupColorPicker('dragon-color-options', 'dragon');
+            showScreen('dragon-color-picker-screen');
+        });
+
+        document.getElementById('bg-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+        document.getElementById('attack-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+        document.getElementById('dragon-color-back-button').addEventListener('click', () => showScreen('settings-screen'));
+        
+        document.getElementById('game-over-to-title-button').addEventListener('click', () => showScreen('title-screen'));
+
+        document.querySelectorAll('.language-options input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                preferredLanguage = event.target.value;
+                localStorage.setItem('preferredLanguage', preferredLanguage);
+                updateLanguage();
+            });
+        });
+
+        document.querySelectorAll('#start-game-screen button[data-size]').forEach(button => {
+            button.addEventListener('click', (event) => {
+                boardSize = parseInt(event.target.dataset.size);
+                initGame();
+                showScreen('game-screen');
+            });
+        });
+
+        document.addEventListener('keydown', e => {
+            if (currentScreen !== 'game-screen') return;
+
+            if (e.key === ' ' && !isAttacking) { // Space bar for attack
+                attack();
+                e.preventDefault(); // Prevent page scrolling
+                return;
+            }
+
+            if (e.key === lastKeyPressed) return; // Prevent multiple moves for same key held down
+
+            let newDx = dx;
+            let newDy = dy;
+
+            switch (e.key) {
+                case 'w':
+                case 'W':
+                case 'ArrowUp':
+                    if (dy !== 1) { newDx = 0; newDy = -1; }
+                    break;
+                case 's':
+                case 'S':
+                case 'ArrowDown':
+                    if (dy !== -1) { newDx = 0; newDy = 1; }
+                    break;
+                case 'a':
+                case 'A':
+                case 'ArrowLeft':
+                    if (dx !== 1) { newDx = -1; newDy = 0; }
+                    break;
+                case 'd':
+                case 'D':
+                case 'ArrowRight':
+                    if (dx !== -1) { newDx = 1; newDy = 0; }
+                    break;
+                default:
+                    return; // Ignore other keys
+            }
+
+            // Only update direction if it's a valid change and not opposite of current direction
+            if (newDx !== dx || newDy !== dy) {
+                dx = newDx;
+                dy = newDy;
+                // Force an immediate update/move after direction change, then wait for gameSpeed
+                updateGame();
+                drawGame();
+                lastMoveTime = performance.now(); // Reset last move time
+            }
+            lastKeyPressed = e.key;
+        });
+
+        // Reset lastKeyPressed when key is released to allow re-pressing same key for next move
+        document.addEventListener('keyup', e => {
+            if (e.key === lastKeyPressed) {
+                lastKeyPressed = '';
+            }
+        });
+
+        // Initial setup
+        loadSettings();
+        showScreen('title-screen'); // Start on title screen
+    </script>
+</body>
+</html>
