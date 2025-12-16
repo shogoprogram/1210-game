@@ -266,12 +266,8 @@
             <h2 id="difficulty-title">難易度選択 (Select Difficulty)</h2>
             <div class="button-group">
                 <button id="difficulty-trial" data-size="5">試し (Trial) 5x5</button>
-            </div>
-            <div class="button-group">
                 <button id="difficulty-easy" data-size="9">初級 (Easy) 9x9</button>
                 <button id="difficulty-medium" data-size="15">中級 (Medium) 15x15</button>
-            </div>
-            <div class="button-group">
                 <button id="difficulty-hard" data-size="20">上級 (Hard) 20x20</button>
                 <button id="difficulty-super-hard" data-size="30">超上級 (Super Hard) 30x30</button>
             </div>
@@ -365,12 +361,15 @@
                 'rules-list': [
                     'WASDキーでドラゴンを動かせます。',
                     'スペースキーで攻撃を撃てます。',
+                    'シンプルで分かりやすいデザインを心がけています。',
                     'コインに当たっても何も起こりません。',
                     '肉（meat）に当たると体が成長し、攻撃範囲が1マス増えます。',
                     'マッシュルームに当たると体が縮み、攻撃範囲が1マス減ります。',
                     '？肉（wonder meat）に当たるとゲームオーバーです。',
                     '敵に当たるとゲームオーバーです。',
-                    '一定の時間がたつとアイテムが新しいものに変わります。'
+                    'スローアイテムに当たると、次のアイテムに当たるまで動きが遅くなります。',
+                    'ファストアイテムに当たると、次のアイテムに当たるまで動きが速くなります。',
+                    '5マス動いたらフィールド上のアイテムが新しいものに変わります。'
                 ],
                 'rules-back-button': '戻るback',
                 'difficulty-title': '難易度選択',
@@ -412,14 +411,16 @@
                 'color-back-button': 'Back',
                 'rules-title': 'Rules',
                 'rules-list': [
-                    <li>Move the dragon with WASD keys.</li>
-                    <li>Press the Space key to unleash an attack.</li>
-                    <li>Nothing happens when you touch a Coin.</li>
-                    <li>Touching Meat makes your body grow and increases attack range by 1 cell.</li>
-                    <li>Touching a Mushroom shrinks your body and decreases attack range by 1 cell.</li>
-                    <li>Touching Wonder Meat results in Game Over.</li>
-                    <li>Touching an Enemy results in Game Over.</li>
-                    <li>The item changes to a new one after a certain period of time.</li>
+                    'Move the dragon with WASD keys.',
+                    'Press the Space key to unleash an attack.',
+                    'The design aims for simplicity and clarity.',
+                    'Nothing happens when you touch a Coin.',
+                    'Touching Meat makes your body grow and increases attack range by 1 cell.',
+                    'Touching a Mushroom shrinks your body and decreases attack range by 1 cell.',
+                    'Touching Wonder Meat results in Game Over.',
+                    'Touching an Enemy results in Game Over.',
+
+                    'The item on the field changes after 5 moves.'
                 ],
                 'rules-back-button': '戻るback',
                 'difficulty-title': 'Select Difficulty',
