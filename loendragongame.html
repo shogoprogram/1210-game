@@ -447,8 +447,6 @@
             { type: 'enemy', weight: 20, color: '#DC143C' },
             { type: 'mushroom', weight: 10, color: '#8B4513' },
             { type: 'wonder-meat', weight: 10, color: '#4B0082' },
-            { type: 'slow', weight: 5, color: '#1E90FF' },
-            { type: 'fast', weight: 10, color: '#FFD700' },
             { type: 'coin', weight: 20, color: '#FFC107' }
         ];
 
@@ -691,21 +689,21 @@
                 ctx.strokeStyle = '#fff';
                 ctx.strokeRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
 
-                // Draw item name on it (simple text for now)
+                // Draw item name on it
                 ctx.fillStyle = '#000'; // Text color for item
-                ctx.font = `${cellSize / 3}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 const itemDisplayName = getTranslation('item-' + currentItem.type);
-                // Ensure text fits within cell or abbreviate if necessary
-                let displayTxt = itemDisplayName;
-                if (ctx.measureText(displayTxt).width > cellSize - 5) {
-                    displayTxt = displayTxt.substring(0, Math.floor(cellSize / (ctx.measureText('M').width))) + '.'; // Simple abbreviation
-                    if (ctx.measureText(displayTxt).width > cellSize - 5 && displayTxt.length > 1) {
-                         displayTxt = itemDisplayName.charAt(0); // If still too long, just first char
-                    }
+                
+                let fontSize = cellSize / 2; // Start with a reasonable font size
+                ctx.font = `${fontSize}px Arial`;
+
+                // Decrease font size until text fits
+                while (ctx.measureText(itemDisplayName).width > cellSize - 5 && fontSize > 5) {
+                    fontSize--;
+                    ctx.font = `${fontSize}px Arial`;
                 }
-                ctx.fillText(displayTxt, food.x * cellSize + cellSize / 2, food.y * cellSize + cellSize / 2);
+                ctx.fillText(itemDisplayName, food.x * cellSize + cellSize / 2, food.y * cellSize + cellSize / 2);
 
                 document.getElementById('current-item-name').textContent = getTranslation('item-display-prefix') + getTranslation('item-' + currentItem.type);
             } else {
@@ -824,12 +822,6 @@
                     break;
                 case 'wonder-meat':
                     gameOver();
-                    break;
-                case 'slow':
-                    gameSpeedModifier = 1.5; // Slower
-                    break;
-                case 'fast':
-                    gameSpeedModifier = 0.5; // Faster
                     break;
                 case 'coin':
                     scoreCoins++;
