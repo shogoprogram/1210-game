@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Dragon Game in Loen</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            position: relative;
+            width: 90%;
+            max-width: 700px;
+        }
+        .screen.active { display: flex; }
+        h1, h2 { margin: 10px 0 20px 0; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover { background-color: #45a049; }
+        .button-group { display: flex; flex-wrap: wrap; justify-content: center; }
+        .color-option {
+            width: 40px; height: 40px; border-radius: 50%;
+            margin: 5px; cursor: pointer; border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .color-option.selected { border-color: #000; }
+        
+        #game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        #score-board { display: flex; gap: 20px; font-size: 1.2em; }
+        #ingame-buttons { margin-left: auto; }
+        #ingame-buttons button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+            background-color: #007bff;
+            margin: 0 0 0 10px;
+        }
+        
+        #item-info { font-size: 1.2em; font-weight: bold; margin-top: 10px; }
+        #rules-content { text-align: left; max-width: 500px; line-height: 1.6; }
+        .back-button { position: absolute; top: 20px; left: 20px; padding: 8px 15px !important; font-size: 0.9em !important; }
+        
+        #game-board { background-color: #fff; border: 2px solid #333; }
+    </style>
+</head>
+<body>
+
+    <div id="title-screen" class="screen active">
+        <h1 data-lang-key="title"></h1>
+        <div class="button-group">
+            <button class="nav-btn" data-target="difficulty-screen" data-lang-key="start"></button>
+            <button class="nav-btn" data-target="rules-screen" data-from="title-screen" data-lang-key="rules"></button>
+            <button class="nav-btn" data-target="settings-screen" data-from="title-screen" data-lang-key="settings"></button>
+        </div>
+    </div>
+
+    <div id="difficulty-screen" class="screen">
+        <button class="back-button nav-btn" data-target="title-screen" data-lang-key="back"></button>
+        <h2 data-lang-key="select_difficulty"></h2>
+        <div class="button-group">
+            <button class="difficulty-btn" data-size="5" data-lang-key="trial"></button>
+            <button class="difficulty-btn" data-size="9" data-lang-key="beginner"></button>
+            <button class="difficulty-btn" data-size="15" data-lang-key="intermediate"></button>
+            <button class="difficulty-btn" data-size="20" data-lang-key="advanced"></button>
+            <button class="difficulty-btn" data-size="30" data-lang-key="expert"></button>
+        </div>
+    </div>
+
+    <div id="settings-screen" class="screen">
+        <button class="back-button nav-btn" data-target="title-screen" data-lang-key="back"></button>
+        <h2 data-lang-key="settings"></h2>
+        <h3 data-lang-key="language"></h3>
+        <div class="button-group">
+            <button id="lang-en">English</button>
+            <button id="lang-ja">日本語</button>
+        </div>
+        <h3 data-lang-key="bg_color"></h3>
+        <div id="bg-color-options" class="button-group"></div>
+        <h3 data-lang-key="attack_color"></h3>
+        <div id="attack-color-options" class="button-group"></div>
+    </div>
+
+    <div id="rules-screen" class="screen">
+        <button class="back-button nav-btn" data-target="title-screen" data-lang-key="back"></button>
+        <h2 data-lang-key="rules"></h2>
+        <div id="rules-content">
+            <p data-lang-key="rule_move"></p>
+            <p data-lang-key="rule_attack"></p>
+            <ul id="rules-list">
+                <li data-lang-key="rule_coin"></li><li data-lang-key="rule_meat"></li><li data-lang-key="rule_mash"></li>
+                <li data-lang-key="rule_wonder_meat"></li><li data-lang-key="rule_enemy"></li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="game-header">
+            <div id="score-board">
+                <div data-lang-key="score_enemies">Enemies: <span id="enemies-score">0</span></div>
+                <div data-lang-key="score_meats">Meats: <span id="meats-score">0</span></div>
+                <div data-lang-key="score_coins">Coins: <span id="coins-score">0</span></div>
+            </div>
+            <div id="ingame-buttons">
+                <button class="nav-btn" data-target="rules-screen" data-from="game-screen" data-lang-key="rules"></button>
+                <button class="nav-btn" data-target="settings-screen" data-from="game-screen" data-lang-key="settings"></button>
+            </div>
+        </div>
+        <canvas id="game-board"></canvas>
+        <div id="item-info"><span data-lang-key="current_item"></span>: <span id="item-name"></span></div>
+    </div>
+
+    <div id="game-over-screen" class="screen">
+        <h2 data-lang-key="game_over"></h2>
+        <div>
+             <p><span data-lang-key="score_enemies"></span>: <span id="final-enemies-score">0</span></p>
+             <p><span data-lang-key="score_meats"></span>: <span id="final-meats-score">0</span></p>
+             <p><span data-lang-key="score_coins"></span>: <span id="final-coins-score">0</span></p>
+        </div>
+        <button id="restart-btn" data-lang-key="restart"></button>
+        <button class="nav-btn" data-target="title-screen" data-lang-key="back_to_title"></button>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const screens = {};
+    document.querySelectorAll('.screen').forEach(s => screens[s.id] = s);
+    const canvas = document.getElementById('game-board');
+    const ctx = canvas.getContext('2d');
+    
+    let currentLang = 'en';
+    let gameSettings = { bgColor: '#FFFFFF', attackColor: '#FFA500', gridSize: 9 };
+    let gridSize, tileSize, dragon, direction, item, itemMovesCounter, scores, attacks, lastDirection;
+
+    const translations = {
+        en: {
+            title: "Mini Dragon Game in Loen", start: "Start", rules: "Rules", settings: "Settings", back: "Back",
+            select_difficulty: "Select Difficulty", trial: "Trial (5x5)", beginner: "Beginner (9x9)",
+            intermediate: "Intermediate (15x15)", advanced: "Advanced (20x20)", expert: "Expert (30x30)",
+            language: "Language", bg_color: "Background Color", attack_color: "Dragon Attack Color",
+            rule_move: "Move with WASD keys.", rule_attack: "Press the Spacebar to shoot an attack.",
+            rule_coin: "<b>Coin</b>: You get points.", rule_meat: "<b>Meat</b>: Your body grows.",
+            rule_mash: "<b>Mushroom</b>: Your body shrinks.", rule_wonder_meat: "<b>? Meat</b>: Game over.",
+            rule_enemy: "<b>Enemy</b>: Touching it is game over. You can defeat it with an attack.",
+            score_enemies: "Enemies", score_meats: "Meats", score_coins: "Coins",
+            current_item: "Current Item", item_name_meat: "Meat", item_name_enemy: "Enemy",
+            item_name_mash: "Mushroom", item_name_wonder_meat: "? Meat", item_name_coin: "Coin",
+            game_over: "Game Over", restart: "Restart", back_to_title: "Back to Title"
+        },
+        ja: {
+            title: "ローエンのミニドラゴンゲーム", start: "スタート", rules: "ルール", settings: "設定", back: "戻る",
+            select_difficulty: "難易度を選ぶ", trial: "試し (5x5)", beginner: "初級 (9x9)",
+            intermediate: "中級 (15x15)", advanced: "上級 (20x20)", expert: "超上級 (30x30)",
+            language: "言語の変更", bg_color: "背景色の変更", attack_color: "ドラゴンの攻撃の色の変更",
+            rule_move: "WASDキーで動きます。", rule_attack: "スペースキーで攻撃を撃てます。",
+            rule_coin: "<b>コイン</b>: ポイントを手に入れます。", rule_meat: "<b>肉</b>: 体が成長します。",
+            rule_mash: "<b>マッシュ</b>: 体が縮みます。", rule_wonder_meat: "<b>？肉</b>: ゲームオーバーです。",
+            rule_enemy: "<b>敵</b>: 当たるとゲームオーバーです。攻撃で倒せます。",
+            score_enemies: "敵", score_meats: "肉", score_coins: "コイン",
+            current_item: "現在のアイテム", item_name_meat: "肉", item_name_enemy: "敵",
+            item_name_mash: "マッシュ", item_name_wonder_meat: "？肉", item_name_coin: "コイン",
+            game_over: "ゲームオーバー", restart: "リスタート", back_to_title: "タイトルに戻る"
+        }
+    };
+    
+    const ITEM_TYPES = {
+        MEAT: { nameKey: 'item_name_meat', probability: 0.35, color: 'red' },
+        ENEMY: { nameKey: 'item_name_enemy', probability: 0.25, color: 'black' },
+        MASH: { nameKey: 'item_name_mash', probability: 0.10, color: 'purple' },
+        WONDER_MEAT: { nameKey: 'item_name_wonder_meat', probability: 0.10, color: 'cyan' },
+        COIN: { nameKey: 'item_name_coin', probability: 0.20, color: 'gold' }
+    };
+
+    const showScreen = (screenId, fromScreen) => {
+        Object.values(screens).forEach(s => s.classList.remove('active'));
+        screens[screenId].classList.add('active');
+        const backButton = screens[screenId]?.querySelector('.back-button');
+        if (backButton) {
+            backButton.dataset.target = fromScreen || 'title-screen';
+        }
+    };
+
+    const updateLanguage = () => {
+        document.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.dataset.langKey;
+            const translation = translations[currentLang]?.[key];
+            if (!translation) return;
+            const target = el.querySelector('span');
+            if (el.tagName === 'LI' || target) { (target || el).innerHTML = translation; }
+            else { el.textContent = translation; }
+        });
+        if (item) updateItemInfo();
+    };
+
+    const initGame = (size) => {
+        gridSize = size;
+        gameSettings.gridSize = size;
+        
+        showScreen('game-screen'); // Show screen FIRST
+        
+        const gameScreen = screens['game-screen'];
+        const gameHeader = document.getElementById('game-header');
+        const itemInfo = document.getElementById('item-info');
+        const availableHeight = gameScreen.clientHeight - gameHeader.offsetHeight - itemInfo.offsetHeight - 40;
+        const boardSize = Math.min(gameScreen.clientWidth * 0.95, availableHeight);
+
+        tileSize = boardSize / gridSize;
+        canvas.width = canvas.height = boardSize;
+        document.getElementById('game-header').style.width = `${boardSize}px`;
+
+        dragon = [{ x: Math.floor(gridSize / 2), y: Math.floor(gridSize / 2) }];
+        direction = { x: 0, y: 0 };
+        lastDirection = { x: 0, y: -1 };
+        attacks = [];
+        itemMovesCounter = 0;
+        scores = { enemies: 0, meats: 0, coins: 0 };
+        
+        updateScoreBoard();
+        generateItem();
+        draw();
+    };
+
+    const moveAndDraw = (moveDirection) => {
+        if (moveDirection.x === 0 && moveDirection.y === 0 && direction.x === 0 && direction.y === 0) return;
+        
+        direction = moveDirection;
+        lastDirection = moveDirection;
+
+        const head = { x: dragon[0].x + direction.x, y: dragon[0].y + direction.y };
+
+        if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize || (dragon.length > 1 && dragon.some(p => p.x === head.x && p.y === head.y))) {
+            return gameOver();
+        }
+
+        dragon.unshift(head);
+        itemMovesCounter++;
+
+        if (head.x === item.x && head.y === item.y) {
+            const itemKey = Object.keys(ITEM_TYPES).find(key => ITEM_TYPES[key] === item.type);
+            switch (itemKey) {
+                case 'MEAT': scores.meats++; break;
+                case 'MASH': if (dragon.length > 1) dragon.pop(); break;
+                case 'WONDER_MEAT': case 'ENEMY': return gameOver();
+                case 'COIN': scores.coins++; dragon.pop(); break;
+            }
+            updateScoreBoard();
+            generateItem();
+        } else {
+            dragon.pop();
+        }
+
+        if (itemMovesCounter > 5) generateItem();
+        draw();
+    };
+
+    const generateItem = () => {
+        const rand = Math.random();
+        let cumulativeProb = 0, chosenTypeKey = 'COIN';
+        for (const [key, data] of Object.entries(ITEM_TYPES)) {
+            cumulativeProb += data.probability;
+            if (rand <= cumulativeProb) { chosenTypeKey = key; break; }
+        }
+        do {
+            item = {
+                x: Math.floor(Math.random() * gridSize),
+                y: Math.floor(Math.random() * gridSize),
+                type: ITEM_TYPES[chosenTypeKey]
+            };
+        } while (dragon.some(part => part.x === item.x && part.y === item.y));
+        itemMovesCounter = 0;
+        updateItemInfo();
+    };
+
+    const handleAttack = () => {
+        const head = dragon[0];
+        const attackRange = 1 + Math.floor(scores.meats / 2);
+        attacks = [];
+        for (let i = 1; i <= attackRange; i++) {
+             attacks.push({ x: head.x + lastDirection.x * i, y: head.y + lastDirection.y * i, life: 5 });
+        }
+        
+        attacks.forEach(attack => {
+            if (item && item.type === ITEM_TYPES.ENEMY && attack.x === item.x && attack.y === item.y) {
+                scores.enemies++;
+                updateScoreBoard();
+                generateItem();
+            }
+        });
+        draw();
+        setTimeout(() => { attacks = []; draw(); }, 150);
+    };
+
+    const gameOver = () => {
+        document.getElementById('final-enemies-score').textContent = scores.enemies;
+        document.getElementById('final-meats-score').textContent = scores.meats;
+        document.getElementById('final-coins-score').textContent = scores.coins;
+        showScreen('game-over-screen');
+    };
+
+    const draw = () => {
+        ctx.fillStyle = gameSettings.bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const itemKey = Object.keys(ITEM_TYPES).find(key => ITEM_TYPES[key] === item.type);
+        ctx.fillStyle = ITEM_TYPES[itemKey].color;
+        ctx.fillRect(item.x * tileSize, item.y * tileSize, tileSize, tileSize);
+        
+        dragon.forEach((part, index) => {
+            ctx.fillStyle = (index === 0) ? '#006400' : '#008000';
+            ctx.fillRect(part.x * tileSize, part.y * tileSize, tileSize, tileSize);
+            if (index === 0) {
+                ctx.fillStyle = 'white';
+                const eyeSize = tileSize / 8;
+                let eyeX = part.x * tileSize, eyeY = part.y * tileSize;
+                if (lastDirection.y === -1) { eyeX += tileSize/2; eyeY += tileSize/4; }
+                else if (lastDirection.y === 1) { eyeX += tileSize/2; eyeY += tileSize*3/4; }
+                else if (lastDirection.x === -1) { eyeX += tileSize/4; eyeY += tileSize/2; }
+                else if (lastDirection.x === 1) { eyeX += tileSize*3/4; eyeY += tileSize/2; }
+                ctx.beginPath();
+                ctx.arc(eyeX, eyeY, eyeSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        ctx.fillStyle = gameSettings.attackColor;
+        attacks.forEach(attack => {
+            ctx.globalAlpha = attack.life / 5.0;
+            ctx.fillRect(attack.x * tileSize, attack.y * tileSize, tileSize, tileSize);
+        });
+        ctx.globalAlpha = 1.0;
+    };
+
+    const updateScoreBoard = () => {
+        document.getElementById('enemies-score').textContent = scores.enemies;
+        document.getElementById('meats-score').textContent = scores.meats;
+        document.getElementById('coins-score').textContent = scores.coins;
+    };
+    const updateItemInfo = () => {
+        document.getElementById('item-name').textContent = translations[currentLang][item.type.nameKey];
+    }
+    const populateColorOptions = () => {
+        const colors = { white: '#FFFFFF', black: '#000000', red: '#FF0000', blue: '#0000FF', yellow: '#FFFF00', brown: '#A52A2A', pink: '#FFC0CB', skyblue: '#87CEEB', orange: '#FFA500', purple: '#800080', green: '#008000', gray: '#808080' };
+        const bgColorOptions = document.getElementById('bg-color-options');
+        const attackColorOptions = document.getElementById('attack-color-options');
+        bgColorOptions.innerHTML = ''; attackColorOptions.innerHTML = '';
+        for (const code of Object.values(colors)) {
+            const bgOption = document.createElement('div'); bgOption.className = 'color-option'; bgOption.style.backgroundColor = code;
+            if (code === gameSettings.bgColor) bgOption.classList.add('selected');
+            bgOption.addEventListener('click', () => { gameSettings.bgColor = code; document.querySelectorAll('#bg-color-options .color-option').forEach(o => o.classList.remove('selected')); bgOption.classList.add('selected'); if(dragon) draw(); });
+            bgColorOptions.appendChild(bgOption);
+
+            const attackOption = document.createElement('div'); attackOption.className = 'color-option'; attackOption.style.backgroundColor = code;
+            if (code === gameSettings.attackColor) attackOption.classList.add('selected');
+            attackOption.addEventListener('click', () => { gameSettings.attackColor = code; document.querySelectorAll('#attack-color-options .color-option').forEach(o => o.classList.remove('selected')); attackOption.classList.add('selected'); });
+            attackColorOptions.appendChild(attackOption);
+        }
+    };
+
+    document.addEventListener('keydown', (e) => {
+        if (!screens['game-screen'].classList.contains('active')) return;
+        
+        e.preventDefault();
+        const key = e.key.toLowerCase();
+        let moveDirection = null;
+
+        if ((key === 'w' || key === 'arrowup') && lastDirection.y !== 1) { moveDirection = { x: 0, y: -1 }; }
+        else if ((key === 's' || key === 'arrowdown') && lastDirection.y !== -1) { moveDirection = { x: 0, y: 1 }; }
+        else if ((key === 'a' || key === 'arrowleft') && lastDirection.x !== 1) { moveDirection = { x: -1, y: 0 }; }
+        else if ((key === 'd' || key === 'arrowright') && lastDirection.x !== -1) { moveDirection = { x: 1, y: 0 }; }
+        else if (key === ' ') { handleAttack(); }
+
+        if (moveDirection) {
+            moveAndDraw(moveDirection);
+        }
+    });
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const currentScreenId = e.target.closest('.screen').id;
+            showScreen(btn.dataset.target, btn.dataset.from || currentScreenId);
+        });
+    });
+    
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => initGame(parseInt(btn.dataset.size, 10)));
+    });
+
+    document.getElementById('restart-btn').addEventListener('click', () => initGame(gameSettings.gridSize));
+    document.getElementById('lang-en').addEventListener('click', () => { currentLang = 'en'; updateLanguage(); });
+    document.getElementById('lang-ja').addEventListener('click', () => { currentLang = 'ja'; updateLanguage(); });
+
+    populateColorOptions();
+    updateLanguage();
+});
+</script>
+</body>
+</html>

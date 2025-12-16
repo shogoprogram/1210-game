@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Dragon Game in Loen</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --attack-color: #ff0000;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: #333;
+            transition: background-color 0.5s;
+        }
+        .screen {
+            width: 95%;
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            position: relative;
+            border: 1px solid #ddd;
+        }
+        .hidden { display: none !important; }
+        h1, h2, h3 { margin-top: 0; }
+        .main-btn {
+            display: block;
+            width: 80%;
+            max-width: 350px;
+            margin: 15px auto;
+            padding: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            background-color: #28a745;
+            color: white;
+            transition: transform 0.2s, background-color 0.2s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .main-btn:hover { transform: scale(1.03); background-color: #218838; }
+        
+        .sub-btn {
+            position: absolute;
+            top: 15px;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #6c757d;
+            color: white;
+            transition: transform 0.2s, background-color 0.2s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .sub-btn:hover { transform: scale(1.05); background-color: #5a6268; }
+        .back-btn { left: 15px; }
+        .rules-btn { right: 110px; }
+        .settings-btn { right: 15px; }
+
+        #rules-screen { text-align: left; }
+        #rules-screen ul { padding-left: 20px; }
+
+        .color-palette { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 10px; }
+        .color-box { width: 40px; height: 40px; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: transform 0.2s, border-color 0.2s; }
+        .color-box:hover { transform: scale(1.1); }
+        .color-box.active { border-color: #007bff; transform: scale(1.1); }
+
+        #game-container, #color-mixer-screen { overflow-y: auto; max-height: 90vh; }
+        .container-box { border: 2px dashed #ddd; border-radius: 10px; padding: 10px; margin-bottom: 15px; min-height: 50px; }
+        #mixer-selected-colors { display: flex; justify-content: center; align-items: center; gap: 10px; }
+        #mixer-base-colors, #mixer-inventory-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .mixer-item-btn { width: 40px; height: 40px; padding: 0; font-size: 0; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: transform 0.1s, border-color 0.2s; }
+        .mixer-item-btn.selected-for-apply { border-color: #007bff; transform: scale(1.1); }
+        .mixer-item-btn:hover { transform: scale(1.1); }
+        
+        .selected-item-display { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.2); flex-shrink: 0; cursor: pointer; transition: transform 0.2s; position: relative; display: flex; justify-content: center; align-items: center; }
+        .selected-item-display:hover { transform: scale(1.1); }
+        .selected-item-display .remove-icon { color: white; text-shadow: 0 0 3px black; font-size: 1.5em; line-height: 1; font-weight: bold; pointer-events: none; opacity: 0.5; }
+        .selected-item-display:hover .remove-icon { opacity: 1; }
+        .action-btn { padding: 10px 20px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; margin: 5px; color: white; }
+        
+        /* Specific colors for mixer */
+        .color-white { background-color: #ffffff; } .color-black { background-color: #000000; } .color-red { background-color: #ff0000; } .color-blue { background-color: #0000ff; } .color-yellow{ background-color: #ffff00; } .color-brown { background-color: #8b4513; }
+        
+        #game-screen #score-container { display: flex; justify-content: space-between; width: 100%; max-width: 600px; margin-bottom: 10px; font-size: 1.2em; }
+        #game-board { border: 2px solid #333; background-color: #fdfdfd;}
+        #game-over-screen h2 { color: #dc3545; font-size: 2em; margin-bottom: 20px;}
+        #game-over-screen #final-scores { margin: 20px 0; font-size: 1.2em; }
+        
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        #modal-content { background: white; padding: 20px; border-radius: 10px; max-height: 70vh; overflow-y: auto; }
+        #modal-list .modal-item { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        #modal-list .modal-item-preview { width: 30px; height: 30px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
+        #modal-list button { background-color: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-left: auto;}
+    </style>
+</head>
+<body>
+
+<div id="title-screen" class="screen">
+    <button id="settings-btn" class="sub-btn settings-btn" data-lang-key="settings_button"></button>
+    <h1 data-lang-key="title"></h1>
+    <button id="start-btn" class="main-btn" data-lang-key="start_button"></button>
+    <button class="rules-btn sub-btn" data-lang-key="rules_button"></button>
+</div>
+
+<div id="difficulty-screen" class="screen hidden">
+    <button class="back-btn sub-btn" data-target-screen="title-screen" data-lang-key="back_button"></button>
+    <h1 data-lang-key="difficulty_title"></h1>
+    <button class="main-btn difficulty-btn" data-size="5" data-lang-key="level_trial"></button>
+    <button class="main-btn difficulty-btn" data-size="9" data-lang-key="level_beginner"></button>
+    <button class="main-btn difficulty-btn" data-size="15" data-lang-key="level_intermediate"></button>
+    <button class="main-btn difficulty-btn" data-size="20" data-lang-key="level_advanced"></button>
+    <button class="main-btn difficulty-btn" data-size="30" data-lang-key="level_expert"></button>
+</div>
+
+<div id="settings-menu-screen" class="screen hidden">
+    <button class="back-btn sub-btn" data-target-screen="title-screen" data-lang-key="back_button"></button>
+    <h1 data-lang-key="settings_button"></h1>
+    <button id="goto-language-btn" class="main-btn menu-btn" data-lang-key="language_title"></button>
+    <button id="goto-bgcolor-btn" class="main-btn menu-btn" data-lang-key="bg_color_title"></button>
+    <button id="goto-attackcolor-btn" class="main-btn menu-btn" data-lang-key="attack_color_title"></button>
+</div>
+
+<div id="language-settings-screen" class="screen hidden">
+    <button class="back-btn sub-btn" data-screen-target="settings-menu-screen" data-lang-key="back_button"></button>
+    <h1 data-lang-key="language_title"></h1>
+    <div id="language-buttons" class="settings-section">
+         <button class="lang-btn main-btn" style="display:inline-block; width:auto; font-size:1.1em;" data-lang="en">English</button>
+         <button class="lang-btn main-btn" style="display:inline-block; width:auto; font-size:1.1em;" data-lang="jp">日本語</button>
+    </div>
+</div>
+
+<div id="color-mixer-screen" class="screen hidden">
+    <button id="mixer-back-btn" class="back-btn sub-btn" data-screen-target="settings-menu-screen" data-lang-key="back_button"></button>
+    <h1 id="color-mixer-title"></h1>
+    <p data-lang-key="mixer_select_for_mix"></p>
+    <div id="mixer-selected-colors" class="container-box"></div>
+    <p data-lang-key="mixer_select_base_color"></p>
+    <div id="mixer-base-colors" class="container-box"></div>
+    <p data-lang-key="mixer_inventory_title"></p>
+    <div id="mixer-inventory-colors" class="container-box"></div>
+    <p data-lang-key="mixer_mix_prompt"></p>
+    <div>
+        <button id="mixer-generate-btn" class="action-btn" style="background-color: #4CAF50;" data-lang-key="mix_button" disabled></button>
+        <button id="mixer-clear-btn" class="action-btn" style="background-color: #ff9800;" data-lang-key="clear_all_button"></button>
+    </div>
+    <div id="mixer-result-message" style="min-height: 40px;"></div>
+    <div style="margin-top:20px; padding-top:20px; border-top: 2px solid #ccc;">
+        <p data-lang-key="mixer_apply_prompt"></p>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 10px;">
+            <div id="mixer-apply-preview" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ddd; background: #fff;"></div>
+            <button id="mixer-apply-btn" class="main-btn" style="font-size: 1em;" disabled></button>
+        </div>
+    </div>
+    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+        <button id="mixer-discard-btn" class="action-btn" style="background-color: #f44336;" data-lang-key="discard_color_button"></button>
+    </div>
+</div>
+
+<div id="rules-screen" class="screen hidden">
+    <button class="back-btn sub-btn" data-target-screen="title-screen" data-lang-key="back_button"></button>
+    <h1 data-lang-key="rules_button"></h1>
+    <div data-lang-key="rules_list_container"></div>
+</div>
+
+<div id="game-container" class="screen hidden">
+    <button id="game-back-btn" class="sub-btn back-btn" data-lang-key="back_button"></button>
+    <h1 data-lang-key="title"></h1>
+    <div id="score-container">
+        <span id="enemy-score"></span> <span id="meat-score"></span> <span id="coin-score"></span>
+    </div>
+    <canvas id="game-board"></canvas>
+    <button id="game-title-return-btn" class="main-btn" style="margin-top:15px; width:auto; font-size:1em;" data-lang-key="back_to_title"></button>
+</div>
+
+<div id="game-over-screen" class="screen hidden">
+    <h2 data-lang-key="game_over_title"></h2>
+    <div id="final-scores">
+        <h3></h3>
+        <p id="final-enemy-score"></p> <p id="final-meat-score"></p> <p id="final-coin-score"></p>
+    </div>
+    <button id="restart-btn" class="main-btn" data-lang-key="restart_button"></button>
+    <button class="back-btn sub-btn" data-target-screen="title-screen" data-lang-key="back_to_title"></button>
+</div>
+
+<div id="modal-overlay" class="hidden">
+    <div id="modal-content">
+        <h2 id="modal-title"></h2>
+        <div id="modal-list"></div>
+        <button id="close-modal-btn" class="main-btn" style="margin-top: 15px; font-size: 1em;"></button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const translations = {
+        en: {
+            title: "Mini Dragon Game in Loen", start_button: "Start", rules_button: "Rules", settings_button: "Settings", back_button: "Back",
+            difficulty_title: "Select Difficulty", level_trial: "Trial (5x5)", level_beginner: "Beginner (9x9)", level_intermediate: "Intermediate (15x15)", level_advanced: "Advanced (20x20)", level_expert: "Expert (30x30)",
+            language_title: "Language", bg_color_title: "Background Color", attack_color_title: "Attack Color",
+            rules_list_container: "<ul><li>Move the dragon with the WASD keys.</li><li>Press SPACE to attack.</li><li>Meat: The dragon grows.</li><li>Mushroom: The dragon shrinks.</li><li>Coin: You get a coin.</li><li>Wonder Meat (?): GAME OVER.</li><li>Enemy: GAME OVER on contact. Can be defeated with an attack.</li><li>Hitting walls or your own body is GAME OVER.</li></ul>",
+            score_enemy: "Enemies: 0", score_meat: "Meat: 0", score_coin: "Coins: 0",
+            game_over_title: "GAME OVER", restart_button: "Restart", back_to_title: "Back to Title", final_score_title: "Final Score",
+            item_meat: "Meat", item_mash: "Mash", item_coin: "Coin", item_enemy: "Enemy", item_wonder_meat: "?Meat",
+            mixer_select_for_mix: "Selected colors:", mixer_select_base_color: "Select a color:", mixer_inventory_title: "Mixed colors:", mixer_mix_prompt: "Mix your favorite colors:", mixer_result_placeholder: "The created color will be displayed here.", discard_color_button: "Discard Color", mixer_apply_prompt: "Click a color to apply", mixer_apply_button: "Set as Background Color", mixer_apply_button_attack: "Set as Attack Color", color_created: "New color created!", no_items_to_discard: "No items to discard."
+        },
+        jp: {
+            title: "ローエンのミニドラゴンゲーム", start_button: "スタート", rules_button: "ルール", settings_button: "設定", back_button: "戻る",
+            difficulty_title: "難易度を選択", level_trial: "試し (5x5)", level_beginner: "初級 (9x9)", level_intermediate: "中級 (15x15)", level_advanced: "上級 (20x20)", level_expert: "超上級 (30x30)",
+            language_title: "言語", bg_color_title: "背景色", attack_color_title: "ドラゴンの攻撃の色",
+            rules_list_container: "<ul><li>WASDキーで龍を動かします。</li><li>スペースキーで攻撃を撃てます。</li><li>肉: 体が成長します。</li><li>マッシュ: 体が縮みます。</li><li>コイン: コインをゲットします。</li><li>？肉: ゲームオーバー。</li><li>敵: 触れるとゲームオーバー。攻撃で倒せます。</li><li>壁や自分の体に当たるとゲームオーバーです。</li></ul>",
+            score_enemy: "敵: 0", score_meat: "肉: 0", score_coin: "コイン: 0",
+            game_over_title: "ゲームオーバー", restart_button: "リスタート", back_to_title: "タイトルに戻る", final_score_title: "最終スコア",
+            item_meat: "肉", item_mash: "マッシュ", item_coin: "コイン", item_enemy: "敵", item_wonder_meat: "？肉",
+            mixer_select_for_mix: "選んだ色:", mixer_select_base_color: "色を選んでください:", mixer_inventory_title: "合成した色:", mixer_mix_prompt: "お好みの色を合成して作ろう:", mixer_result_placeholder: "作成した色が表示されます。", discard_color_button: "色を破棄", mixer_apply_prompt: "適用する色をクリックで選択", mixer_apply_button: "この色を背景色にする", mixer_apply_button_attack: "この色を攻撃色にする", color_created: "新しい色を作成しました！", no_items_to_discard: "破棄するアイテムがありません。"
+        }
+    };
+
+    let currentLanguage = 'en';
+    let settings = { bgColor: '#ffffff', attackColor: '#ff0000', gridSize: 9 };
+    let gameState = 'TITLE';
+    let colorMixerMode = ''; 
+    let mixer_selected = [], mixer_inventory = [], mixer_colorIdCounter = 0, mixer_colorToApply = null;
+    let dragon, direction, item, scores, moveCounter, attackRangeModifier;
+    let attack = { active: false, squares: [], range: 1 };
+
+    const allScreens = document.querySelectorAll('.screen');
+    const canvas = document.getElementById('game-board');
+    const ctx = canvas.getContext('2d');
+    const baseColorOptions = ['#ffffff', '#000000', '#ff0000', '#0000ff', '#ffff00', '#8b4513'];
+    
+    function showScreen(screenId) { allScreens.forEach(s => s.classList.add('hidden')); document.getElementById(screenId).classList.remove('hidden'); }
+    function setLanguage(lang) {
+        currentLanguage = lang;
+        document.documentElement.lang = lang;
+        document.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.getAttribute('data-lang-key');
+            if (translations[lang][key]) {
+                if (key === 'rules_list_container') el.innerHTML = translations[lang][key];
+                else el.textContent = translations[lang][key];
+            }
+        });
+        updateMixerApplyButtonText();
+        updateScores();
+    }
+    
+    function hexToRgb(val) {
+        const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(val);
+        return r ? { r: parseInt(r[1], 16), g: parseInt(r[2], 16), b: parseInt(r[3], 16) } : null;
+    }
+
+    const colorMixer = {
+        baseColorsEl: document.getElementById('mixer-base-colors'), inventoryEl: document.getElementById('mixer-inventory-colors'), selectedEl: document.getElementById('mixer-selected-colors'),
+        generateBtn: document.getElementById('mixer-generate-btn'), clearBtn: document.getElementById('mixer-clear-btn'), discardBtn: document.getElementById('mixer-discard-btn'),
+        resultEl: document.getElementById('mixer-result-message'), applyPreviewEl: document.getElementById('mixer-apply-preview'), applyBtn: document.getElementById('mixer-apply-btn'),
+        titleEl: document.getElementById('color-mixer-screen').querySelector('h1'),
+
+        renderButtons() {
+            this.baseColorsEl.innerHTML = '';
+            baseColorOptions.forEach(hex => this.baseColorsEl.appendChild(this.createColorButton({id: hex, value: hex})));
+            this.inventoryEl.innerHTML = '';
+            mixer_inventory.forEach(c => this.inventoryEl.appendChild(this.createColorButton(c)));
+            this.updateApplySelectionDisplay();
+        },
+        createColorButton(color) {
+            const btn = document.createElement('button'); btn.className = 'mixer-item-btn'; btn.style.backgroundColor = color.value;
+            if (mixer_colorToApply && color.id === mixer_colorToApply.id) btn.classList.add('selected-for-apply');
+            btn.addEventListener('click', () => { this.selectColorForApply(color); this.selectColorForMix(color); });
+            return btn;
+        },
+        updateSelectedDisplay() {
+            this.selectedEl.innerHTML = '';
+            mixer_selected.forEach((c, i) => {
+                const div = document.createElement('div'); div.className = 'selected-item-display'; div.style.backgroundColor = c.value;
+                const removeIcon = document.createElement('span'); removeIcon.className = 'remove-icon'; removeIcon.textContent = '×';
+                div.appendChild(removeIcon); div.onclick = () => this.removeSelected(i);
+                this.selectedEl.appendChild(div);
+            });
+            this.generateBtn.disabled = mixer_selected.length < 2;
+        },
+        selectColorForMix(color) { if (mixer_selected.length < 3) { mixer_selected.push(color); this.updateSelectedDisplay(); } else { alert(translations[currentLanguage].max_ingredients_alert); } },
+        removeSelected(index) { mixer_selected.splice(index, 1); this.updateSelectedDisplay(); },
+        clearSelection() { mixer_selected = []; this.updateSelectedDisplay(); this.resultEl.textContent = ''; },
+        generateColor() {
+            if (mixer_selected.length < 2) return; mixer_colorIdCounter++;
+            const colors = mixer_selected.map(m => hexToRgb(m.value)).filter(Boolean);
+            let finalColor = mixer_selected[0].value;
+            if (colors.length > 0) { const avg = { r: Math.floor(colors.reduce((s, c) => s + c.r, 0) / colors.length), g: Math.floor(colors.reduce((s, c) => s + c.g, 0) / colors.length), b: Math.floor(colors.reduce((s, c) => s + c.b, 0) / colors.length) }; finalColor = `rgb(${avg.r}, ${avg.g}, ${avg.b})`; }
+            const newColor = { id: 'mixer_' + mixer_colorIdCounter, value: finalColor };
+            mixer_inventory.push(newColor); this.clearSelection(); this.renderButtons(); this.resultEl.textContent = translations[currentLanguage].color_created;
+        },
+        openDiscardModal() { openModal('discard_color_button', mixer_inventory, (id) => { mixer_inventory = mixer_inventory.filter(c => c.id !== id); if (mixer_colorToApply && mixer_colorToApply.id === id) this.selectColorForApply(null); this.renderButtons(); this.openDiscardModal(); }); },
+        selectColorForApply(color) { mixer_colorToApply = color; this.updateApplySelectionDisplay(); },
+        updateApplySelectionDisplay() { this.applyPreviewEl.style.backgroundColor = mixer_colorToApply ? mixer_colorToApply.value : '#fff'; this.applyBtn.disabled = !mixer_colorToApply; this.renderButtons(); },
+        applyColor() {
+            if (!mixer_colorToApply) return;
+            settings[colorMixerMode] = mixer_colorToApply.value;
+            document.documentElement.style.setProperty(colorMixerMode === 'bgColor' ? '--bg-color' : '--attack-color', mixer_colorToApply.value);
+        },
+        init() { this.generateBtn.onclick = this.generateColor.bind(this); this.clearBtn.onclick = this.clearSelection.bind(this); this.discardBtn.onclick = this.openDiscardModal.bind(this); this.applyBtn.onclick = this.applyColor.bind(this); }
+    };
+    function openColorMixer(mode) {
+        colorMixerMode = mode;
+        colorMixer.titleEl.textContent = translations[currentLanguage][mode === 'bgColor' ? 'bg_color_title' : 'attack_color_title'];
+        updateMixerApplyButtonText(); colorMixer.renderButtons();
+        showScreen('color-mixer-screen');
+    }
+    function updateMixerApplyButtonText() {
+        const baseKey = colorMixerMode === 'bgColor' ? 'mixer_apply_button' : 'mixer_apply_button_attack';
+        colorMixer.applyBtn.textContent = translations[currentLanguage][baseKey];
+    }
+    
+    function initGame() {
+        dragon = [{ x: Math.floor(settings.gridSize / 2), y: Math.floor(settings.gridSize / 2) }];
+        direction = { x: 0, y: 0 }; scores = { enemy: 0, meat: 0, coin: 0 }; moveCounter = 0; attackRangeModifier = 0;
+        attack.range = 1 + attackRangeModifier;
+        placeItem(); updateScores(); draw();
+    }
+    function startGame(size) {
+        settings.gridSize = size;
+        const boardSize = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.7, 600);
+        canvas.width = boardSize; canvas.height = boardSize;
+        initGame(); showScreen('game-screen'); gameState = 'PLAYING';
+    }
+    function gameOver() {
+        gameState = 'GAME_OVER';
+        document.getElementById('final-enemy-score').textContent = `${translations[currentLanguage].score_enemy.split(':')[0]}: ${scores.enemy}`;
+        document.getElementById('final-meat-score').textContent = `${translations[currentLanguage].score_meat.split(':')[0]}: ${scores.meat}`;
+        document.getElementById('final-coin-score').textContent = `${translations[currentLanguage].score_coin.split(':')[0]}: ${scores.coin}`;
+        showScreen('game-over-screen');
+    }
+    function updateScores() {
+        if(gameState !== 'PLAYING' && gameState !== 'GAME_OVER') return;
+        const enemyEl = document.getElementById('enemy-score');
+        const meatEl = document.getElementById('meat-score');
+        const coinEl = document.getElementById('coin-score');
+        if(enemyEl) enemyEl.textContent = `${translations[currentLanguage].score_enemy.split(':')[0]}: ${scores.enemy}`;
+        if(meatEl) meatEl.textContent = `${translations[currentLanguage].score_meat.split(':')[0]}: ${scores.meat}`;
+        if(coinEl) coinEl.textContent = `${translations[currentLanguage].score_coin.split(':')[0]}: ${scores.coin}`;
+    }
+    const ITEM_PROBABILITY = { meat: 0.35, enemy: 0.20, mash: 0.10, wonder_meat: 0.10, coin: 0.25 };
+    function placeItem() {
+        const rand = Math.random(); let cumulative = 0; let itemType = 'coin';
+        for (const [type, prob] of Object.entries(ITEM_PROBABILITY)) { cumulative += prob; if (rand < cumulative) { itemType = type; break; } }
+        let position;
+        do { position = { x: Math.floor(Math.random() * settings.gridSize), y: Math.floor(Math.random() * settings.gridSize) }; } while (dragon.some(d => d.x === position.x && d.y === position.y));
+        item = { ...position, type: itemType };
+    }
+    function updateAndDraw() {
+        if (gameState !== 'PLAYING') return; 
+        const head = { x: dragon[0].x + direction.x, y: dragon[0].y + direction.y };
+        if (head.x < 0 || head.x >= settings.gridSize || head.y < 0 || head.y >= settings.gridSize || dragon.some((s, i) => i > 0 && s.x === head.x && s.y === head.y)) return gameOver();
+        dragon.unshift(head);
+        if (head.x === item.x && head.y === item.y) {
+            moveCounter = 0;
+            switch (item.type) {
+                case 'meat': scores.meat++; updateScores(); attackRangeModifier++; attack.range = 1 + attackRangeModifier; break;
+                case 'mash': if (dragon.length > 1) dragon.pop(); if (dragon.length > 1) dragon.pop(); if (attackRangeModifier > 0) attackRangeModifier--; attack.range = 1 + attackRangeModifier; break;
+                case 'coin': scores.coin++; updateScores(); dragon.pop(); break;
+                case 'wonder_meat': case 'enemy': return gameOver();
+            }
+            placeItem();
+        } else { dragon.pop(); }
+        moveCounter++;
+        if (moveCounter >= 5) { placeItem(); moveCounter = 0; }
+        draw();
+    }
+    function handleAttack() {
+        if (gameState !== 'PLAYING' || (direction.x === 0 && direction.y === 0)) return;
+        const head = dragon[0];
+        let attackSquares = [];
+        for (let i = 1; i <= attack.range; i++) {
+            const attackX = head.x + direction.x * i; const attackY = head.y + direction.y * i;
+            attackSquares.push({x: attackX, y: attackY});
+            if (item.type === 'enemy' && attackX === item.x && attackY === item.y) { scores.enemy++; updateScores(); placeItem(); moveCounter = 0; break; }
+        }
+        attack.active = true; attack.squares = attackSquares;
+        draw();
+        setTimeout(() => { attack.active = false; draw(); }, 150);
+    }
+    function draw() {
+        const cellSize = canvas.width / settings.gridSize;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const itemColors = { meat: 'red', mash: 'purple', coin: 'gold', wonder_meat: 'cyan', enemy: 'black' };
+        ctx.fillStyle = itemColors[item.type];
+        ctx.fillRect(item.x * cellSize, item.y * cellSize, cellSize, cellSize);
+        ctx.fillStyle = (item.type === 'wonder_meat' || item.type === 'enemy') ? 'white' : 'black';
+        ctx.font = `bold ${cellSize * 0.3}px sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(translations[currentLanguage][`item_${item.type}`], (item.x + 0.5) * cellSize, (item.y + 0.5) * cellSize);
+        ctx.fillStyle = 'darkgreen';
+        dragon.forEach(segment => ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize));
+        const head = dragon[0];
+        ctx.fillStyle = 'white'; ctx.font = `bold ${cellSize * 0.5}px sans-serif`;
+        ctx.fillText('me', (head.x + 0.5) * cellSize, (head.y + 0.55) * cellSize);
+        
+        const eyeRadius = cellSize * 0.1; const eyeOffset = cellSize * 0.25;
+        ctx.fillStyle = 'white';
+        let eye1_x, eye1_y, eye2_x, eye2_y;
+        if (direction.x === 1) { eye1_x = head.x+0.75; eye1_y = head.y+0.25; eye2_x = head.x+0.75; eye2_y = head.y+0.75; }
+        else if (direction.x === -1) { eye1_x = head.x+0.25; eye1_y = head.y+0.25; eye2_x = head.x+0.25; eye2_y = head.y+0.75; }
+        else if (direction.y === 1) { eye1_x = head.x+0.25; eye1_y = head.y+0.75; eye2_x = head.x+0.75; eye2_y = head.y+0.75; }
+        else { eye1_x = head.x+0.25; eye1_y = head.y+0.25; eye2_x = head.x+0.75; eye2_y = head.y+0.25; }
+        ctx.beginPath();
+        ctx.arc(eye1_x * cellSize, eye1_y * cellSize, eyeRadius, 0, 2*Math.PI);
+        ctx.arc(eye2_x * cellSize, eye2_y * cellSize, eyeRadius, 0, 2*Math.PI);
+        ctx.fill();
+
+        if (attack.active && attack.squares) { ctx.fillStyle = settings.attackColor; attack.squares.forEach(sq => { ctx.fillRect(sq.x * cellSize, sq.y * cellSize, cellSize, cellSize); }); }
+    }
+
+    document.addEventListener('keydown', e => {
+        if (gameState !== 'PLAYING') return;
+        const key = e.key.toLowerCase();
+        if (key === ' ') { e.preventDefault(); handleAttack(); return; }
+        if (!['w', 'a', 's', 'd'].includes(key)) return;
+        const currentDirection = { ...direction };
+        let newDirection = { ...direction };
+        switch (key) {
+            case 'w': if (currentDirection.y !== 1) newDirection = { x: 0, y: -1 }; break;
+            case 's': if (currentDirection.y !== -1) newDirection = { x: 0, y: 1 }; break;
+            case 'a': if (currentDirection.x !== 1) newDirection = { x: -1, y: 0 }; break;
+            case 'd': if (currentDirection.x !== -1) newDirection = { x: 1, y: 0 }; break;
+        }
+        direction = newDirection;
+        updateAndDraw();
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => showScreen('difficulty-screen'));
+    document.querySelector('.rules-btn').addEventListener('click', () => showScreen('rules-screen'));
+    document.querySelector('.settings-btn').addEventListener('click', () => showScreen('settings-menu-screen'));
+    document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', (e) => showScreen(e.currentTarget.dataset.targetScreen)));
+    document.querySelectorAll('.difficulty-btn').forEach(btn => btn.addEventListener('click', (e) => startGame(parseInt(e.currentTarget.dataset.size))));
+    document.getElementById('restart-btn').addEventListener('click', () => startGame(settings.gridSize));
+    document.getElementById('game-title-return-btn').addEventListener('click', () => { gameState = 'TITLE'; showScreen('title-screen'); });
+    document.getElementById('lang-en').addEventListener('click', () => setLanguage('en'));
+    document.getElementById('lang-jp').addEventListener('click', () => setLanguage('jp'));
+    
+    document.getElementById('goto-bgcolor-btn').onclick = () => openColorMixer('bgColor');
+    document.getElementById('goto-attackcolor-btn').onclick = () => openColorMixer('attackColor');
+    
+    colorMixer.init();
+    setLanguage('en');
+    showScreen('title-screen');
+});
+</script>
+</body>
+</html>
