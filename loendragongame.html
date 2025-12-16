@@ -125,6 +125,7 @@
             padding: 20px;
             border-radius: 8px;
             line-height: 1.6;
+            margin-bottom: 30px; /* Add margin to separate from buttons */
         }
         #rules-text ul {
             list-style: disc;
@@ -545,6 +546,10 @@
                     div.classList.add('selected');
                     // Save to local storage
                     localStorage.setItem('gameColors', JSON.stringify(currentColors));
+                    // If background color changed, update body background immediately
+                    if (colorType === 'background') {
+                        document.body.style.backgroundColor = hex;
+                    }
                     // Redraw if in game
                     if (gameRunning) drawGame();
                 });
@@ -757,10 +762,13 @@
             } else {
                 // If no food eaten, remove the tail
                 dragon.pop();
-                movesSinceLastItem++;
-                if (movesSinceLastItem >= itemMovesLimit) {
-                    generateItem();
-                    movesSinceLastItem = 0;
+                // Only increment movesSinceLastItem if the dragon actually moved (dx or dy is not 0)
+                if (dx !== 0 || dy !== 0) {
+                    movesSinceLastItem++;
+                    if (movesSinceLastItem >= itemMovesLimit) {
+                        generateItem();
+                        movesSinceLastItem = 0;
+                    }
                 }
             }
 
