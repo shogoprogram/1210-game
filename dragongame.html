@@ -22,19 +22,22 @@
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 90%;
-            width: 800px; /* Increased width to accommodate larger boards */
+            max-width: 1000px; /* Increased max-width */
+            width: 95%; /* Adjusted width */
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative; /* For overlay elements */
+            position: relative;
+            min-height: 500px; /* Ensure enough height for positioning buttons */
         }
         h1 {
             color: #4CAF50;
             margin-bottom: 20px;
             font-size: 2.5em;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            width: 100%; /* Occupy full width for centering title */
+            text-align: center;
         }
         h2 {
             color: #555;
@@ -69,9 +72,15 @@
             width: 100%;
             display: none; /* Hidden by default */
             animation: fadeIn 0.5s ease-in-out;
+            flex-grow: 1; /* Allow screens to grow within container */
+            display: flex; /* Make screens flex containers */
+            flex-direction: column; /* Arrange content vertically */
+            justify-content: center; /* Center content vertically by default */
+            align-items: center;
+            position: relative; /* For child absolute positioning */
         }
         .screen.active {
-            display: block;
+            display: flex; /* Use flex for active screens */
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -79,11 +88,27 @@
         }
 
         /* Title Screen */
-        #title-screen button {
+        #title-screen {
+            justify-content: space-between; /* Push title to top, start to bottom */
+            padding-top: 60px; /* Space for top-right buttons */
+            padding-bottom: 60px; /* Space for bottom button */
+        }
+        #title-screen h1 {
+            margin-top: 0;
+            margin-bottom: auto; /* Push title to top */
+        }
+        #title-screen #top-right-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px; /* Space between buttons */
+        }
+        #title-screen #start-button {
             display: block;
             width: 60%;
             max-width: 300px;
-            margin: 15px auto;
+            margin: auto auto 15px auto; /* Push to bottom */
         }
 
         /* Settings Screen */
@@ -114,7 +139,15 @@
         }
 
         /* Rules Screen */
-        #rules-screen p {
+        #rules-screen {
+            justify-content: flex-start; /* Align content to top */
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        #rules-screen h2 {
+            margin-top: 0;
+        }
+        #rules-screen .rules-content {
             text-align: left;
             margin-bottom: 15px;
             padding: 0 10px;
@@ -123,6 +156,12 @@
             border: 1px solid #eee;
             border-radius: 8px;
             background-color: #f9f9f9;
+            flex-grow: 1; /* Allow rules content to take available space */
+            width: 100%;
+            max-width: 600px;
+        }
+        #rules-screen .rules-content p {
+             padding: 5px 0;
         }
         #rules-screen button {
             margin-top: 20px;
@@ -139,9 +178,10 @@
         /* Game Screen */
         #game-screen {
             position: relative;
-            display: flex;
+            /* display: flex; REMOVED as .screen already sets display: flex */
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
         #game-canvas {
             border: 2px solid #4CAF50;
@@ -184,6 +224,10 @@
             color: #4CAF50;
         }
         /* Game Over Screen */
+        #game-over-screen {
+            justify-content: center; /* Center content vertically */
+            align-items: center;
+        }
         #game-over-screen h2 {
             color: #D32F2F;
         }
@@ -224,9 +268,11 @@
         <!-- Title Screen -->
         <div id="title-screen" class="screen active">
             <h1 data-key="title">ローエンのミニドラゴンゲーム（Mini Dragon Game in Loen）</h1>
+            <div id="top-right-buttons">
+                <button id="settings-button" data-key="settings">Settings</button>
+                <button id="rules-button" data-key="rules">Rules</button>
+            </div>
             <button id="start-button" data-key="start_game">Start Game</button>
-            <button id="settings-button" data-key="settings">Settings</button>
-            <button id="rules-button" data-key="rules">Rules</button>
         </div>
 
         <!-- Settings Screen -->
@@ -363,8 +409,8 @@
 
     <script>
         // --- Game Configuration ---
-        const CELL_SIZE = 20; // Size of each cell in pixels
-        const INITIAL_DRAGON_LENGTH = 3;
+        const CELL_SIZE = 30; // Size of each cell in pixels
+        const INITIAL_DRAGON_LENGTH = 1;
         const INITIAL_DRAGON_SPEED = 150; // Milliseconds per move
         const SLOW_SPEED_FACTOR = 1.5;
         const FAST_SPEED_FACTOR = 0.6;
@@ -403,7 +449,7 @@
         let dragon = [];
         let direction = 'up'; // 'up', 'down', 'left', 'right'
         let currentSpeed = INITIAL_DRAGON_SPEED;
-        let gameIntervalId;
+        let gameIntervalId = null;
         let item = null;
         let score = 0;
         let meatCount = 0;
@@ -412,6 +458,7 @@
         let isAttacking = false;
         let dragonAttackRange = 1; // Initial attack range
         let pendingDirection = null; // To prevent rapid double key presses
+        let gameRunning = false; // New flag to control game start
 
         // --- DOM Elements ---
         const screens = document.querySelectorAll('.screen');
@@ -588,6 +635,7 @@
 
         function initGame(difficulty) {
             clearInterval(gameIntervalId); // Clear any existing interval
+            gameRunning = false; // Reset game running flag
 
             switch (difficulty) {
                 case 'trial': BOARD_SIZE = 5; break;
@@ -629,13 +677,13 @@
             canvas.style.backgroundColor = backgroundColor;
 
             spawnRandomItem();
-            drawGame();
-            gameIntervalId = setInterval(gameLoop, currentSpeed);
+            drawGame(); // Draw initial state
             switchScreen('game-screen');
         }
 
         function gameOver() {
             clearInterval(gameIntervalId);
+            gameRunning = false; // Stop game loop
             finalScoreDisplay.textContent = score;
             finalMeatDisplay.textContent = meatCount;
             finalCoinDisplay.textContent = coinCount;
@@ -1001,6 +1049,12 @@
         document.addEventListener('keydown', e => {
             if (currentScreen !== 'game') return;
 
+            // Start game loop on first valid move key press
+            if (!gameRunning && ['w', 's', 'a', 'd', 'W', 'S', 'A', 'D'].includes(e.key)) {
+                gameRunning = true;
+                gameIntervalId = setInterval(gameLoop, currentSpeed);
+            }
+
             switch (e.key) {
                 case 'w':
                 case 'W':
@@ -1020,7 +1074,9 @@
                     break;
                 case ' ': // Spacebar for attack
                     e.preventDefault(); // Prevent scrolling
-                    handleAttack();
+                    if (gameRunning) { // Only allow attack if game is running
+                        handleAttack();
+                    }
                     break;
             }
         });
