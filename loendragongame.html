@@ -380,7 +380,7 @@
                 'item-meat': '肉',
                 'item-enemy': '敵',
                 'item-mushroom': 'マッシュルーム',
-                'item-wonder-meat': '？肉',
+                'item-wonder-meat': '？<br>肉',
                 'item-slow': 'スロー',
                 'item-fast': 'ファスト',
                 'item-coin': 'コイン',
@@ -431,7 +431,7 @@
                 'item-meat': 'Meat',
                 'item-enemy': 'Enemy',
                 'item-mushroom': 'Mushroom',
-                'item-wonder-meat': 'Wonder Meat',
+                'item-wonder-meat': 'Wonder<br>Meat',
                 'item-slow': 'Slow',
                 'item-fast': 'Fast',
                 'item-coin': 'Coin',
@@ -694,16 +694,30 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 const itemDisplayName = getTranslation('item-' + currentItem.type);
+                const lines = itemDisplayName.split('<br>');
                 
                 let fontSize = cellSize / 2; // Start with a reasonable font size
                 ctx.font = `${fontSize}px Arial`;
 
-                // Decrease font size until text fits
-                while (ctx.measureText(itemDisplayName).width > cellSize - 5 && fontSize > 5) {
+                // Adjust font size based on the longest line
+                let longestLine = '';
+                lines.forEach(line => {
+                    if (line.length > longestLine.length) {
+                        longestLine = line;
+                    }
+                });
+
+                while (ctx.measureText(longestLine).width > cellSize - 5 && fontSize > 5) {
                     fontSize--;
                     ctx.font = `${fontSize}px Arial`;
                 }
-                ctx.fillText(itemDisplayName, food.x * cellSize + cellSize / 2, food.y * cellSize + cellSize / 2);
+
+                // Draw each line
+                let yOffset = -((lines.length - 1) * fontSize / 2) + cellSize / 2;
+                lines.forEach(line => {
+                    ctx.fillText(line, food.x * cellSize + cellSize / 2, food.y * cellSize + yOffset);
+                    yOffset += fontSize;
+                });
 
                 document.getElementById('current-item-name').textContent = getTranslation('item-display-prefix') + getTranslation('item-' + currentItem.type);
             } else {
@@ -986,6 +1000,8 @@
 
         // Initial setup
         loadSettings();
+        // Explicitly set text for rules back button after loadSettings/updateLanguage
+        document.getElementById('rules-back-button').textContent = getTranslation('rules-back-button');
         showScreen('title-screen'); // Start on title screen
     </script>
 </body>
