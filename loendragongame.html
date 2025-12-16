@@ -386,7 +386,7 @@
                 'item-meat': '肉',
                 'item-enemy': '敵',
                 'item-mushroom': 'マッシュルーム',
-                'item-wonder-meat': '？<br>肉',
+                'item-wonder-meat': '？肉',
                 'item-coin': 'コイン',
                 'item-display-prefix': '現在のアイテム: ',
                 'language-ja': '日本語',
@@ -432,7 +432,7 @@
                 'item-meat': 'Meat',
                 'item-enemy': 'Enemy',
                 'item-mushroom': 'Mushroom',
-                'item-wonder-meat': 'Wonder<br>Meat',
+                'item-wonder-meat': 'Wonder Meat',
                 'item-coin': 'Coin',
                 'item-display-prefix': 'Current Item: ',
                 'language-ja': 'Japanese',
@@ -457,7 +457,9 @@
         }
 
         function updateLanguage() {
-            document.getElementById('title-text').innerHTML = getTranslation('title-text');
+            document.getElementById('title-ja').style.display = (preferredLanguage === 'ja') ? 'block' : 'none';
+            document.getElementById('title-en').style.display = (preferredLanguage === 'en') ? 'block' : 'none';
+
             document.getElementById('settings-button').textContent = getTranslation('settings-button');
             document.getElementById('rules-button').textContent = getTranslation('rules-button');
             document.getElementById('start-button').textContent = getTranslation('start-button');
@@ -470,7 +472,6 @@
             document.getElementById('attack-color-picker-title').textContent = getTranslation('attack-color-picker-title');
             document.getElementById('dragon-color-picker-title').textContent = getTranslation('dragon-color-picker-title');
 
-            // Update all color picker back buttons
             document.getElementById('bg-color-back-button').textContent = getTranslation('color-back-button');
             document.getElementById('attack-color-back-button').textContent = getTranslation('color-back-button');
             document.getElementById('dragon-color-back-button').textContent = getTranslation('color-back-button');
@@ -499,13 +500,11 @@
             document.getElementById('game-over-screen').querySelector('h2').textContent = getTranslation('game-over-h2');
             document.getElementById('game-over-to-title-button').textContent = getTranslation('game-over-to-title-button');
 
-            // Update language radio buttons
             document.querySelector('.language-options label:nth-child(1)').childNodes[1].nodeValue = ' ' + getTranslation('language-ja');
             document.querySelector('.language-options label:nth-child(2)').childNodes[1].nodeValue = ' ' + getTranslation('language-en');
 
-            // Update item display if visible
             if (currentItem) {
-                document.getElementById('current-item-name').textContent = getTranslation('item-' + currentItem.type);
+                document.getElementById('current-item-name').textContent = getTranslation('item-display-prefix') + getTranslation('item-' + currentItem.type);
             }
         }
 
@@ -526,7 +525,7 @@
 
         function setupColorPicker(containerId, colorType) {
             const container = document.getElementById(containerId);
-            container.innerHTML = ''; // Clear previous options
+            container.innerHTML = '';
             Object.entries(COLORS).forEach(([name, hex]) => {
                 const div = document.createElement('div');
                 div.className = 'color-option';
@@ -538,16 +537,12 @@
                 }
                 div.addEventListener('click', () => {
                     currentColors[colorType] = hex;
-                    // Update selection visual
                     container.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('selected'));
                     div.classList.add('selected');
-                    // Save to local storage
                     localStorage.setItem('gameColors', JSON.stringify(currentColors));
-                    // If background color changed, update body background immediately
                     if (colorType === 'background') {
                         document.body.style.backgroundColor = hex;
                     }
-                    // Redraw if in game
                     if (gameRunning) drawGame();
                 });
                 container.appendChild(div);
@@ -570,9 +565,7 @@
             setupColorPicker('dragon-color-options', 'dragon');
         }
 
-        // --- Game Logic ---
         function initGame() {
-            // Adjust canvas size based on boardSize
             const maxCanvasWidth = Math.min(gameContainer.clientWidth - 40, 700);
             cellSize = Math.floor(maxCanvasWidth / boardSize);
             canvas.width = boardSize * cellSize;
@@ -581,21 +574,21 @@
             dragon = [
                 { x: Math.floor(boardSize / 2), y: Math.floor(boardSize / 2) }
             ];
-            dx = 0; // Initial direction (not moving)
-            dy = 0; // Dragon not moving initially
+            dx = 0;
+            dy = 0;
             lastKeyPressed = '';
             scoreEnemies = 0;
             scoreMeat = 0;
             scoreCoins = 0;
-            gameSpeed = 500; // Milliseconds per move - adjusted for much slower pace
+            gameSpeed = 500;
             gameSpeedModifier = 1;
             attackRange = 1;
             movesSinceLastItem = 0;
             isAttacking = false;
             attackAnimationFrame = 0;
-            currentItem = null; // Clear item
+            currentItem = null;
 
-            generateItem(); // Place first item
+            generateItem();
 
             document.getElementById('score-enemies').querySelector('span').textContent = scoreEnemies;
             document.getElementById('score-meat').querySelector('span').textContent = scoreMeat;
@@ -605,7 +598,7 @@
 
             gameRunning = true;
             lastMoveTime = performance.now();
-            startGameLoop(); // Ensure loop starts on init
+            startGameLoop();
         }
 
         function startGameLoop() {
@@ -626,29 +619,15 @@
         }
 
         function drawGame() {
-            // Draw background
             ctx.fillStyle = currentColors.background;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw grid (optional, but good for debugging/visualizing)
-            // ctx.strokeStyle = '#333';
-            // for (let i = 0; i < boardSize; i++) {
-            //     ctx.beginPath();
-            //     ctx.moveTo(i * cellSize, 0);
-            //     ctx.lineTo(i * cellSize, canvas.height);
-            //     ctx.moveTo(0, i * cellSize);
-            //     ctx.lineTo(canvas.width, i * cellSize);
-            //     ctx.stroke();
-            // }
-
-            // Draw dragon
             dragon.forEach((segment, index) => {
                 ctx.fillStyle = currentColors.dragon;
                 ctx.strokeStyle = '#000';
                 ctx.fillRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
                 ctx.strokeRect(segment.x * cellSize, segment.y * cellSize, cellSize, cellSize);
 
-                // Draw dragon's eye on head
                 if (index === 0) { // Head
                     ctx.fillStyle = '#000'; // Eye color
                     let eyeRadius = cellSize / 6;
@@ -676,17 +655,14 @@
                         eye2Y = segment.y * cellSize + cellSize * 3 / 4;
                     }
 
-                    // Draw first eye
                     ctx.beginPath();
                     ctx.arc(eye1X, eye1Y, eyeRadius, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Draw second eye
                     ctx.beginPath();
                     ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Draw "me" text
                     ctx.fillStyle = '#FFF';
                     ctx.font = `${cellSize / 2}px Arial`;
                     ctx.textAlign = 'center';
@@ -695,35 +671,44 @@
                 }
             });
 
-            // Draw current item
             if (currentItem) {
                 ctx.fillStyle = currentItem.color;
                 ctx.fillRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
                 ctx.strokeStyle = '#fff';
                 ctx.strokeRect(food.x * cellSize, food.y * cellSize, cellSize, cellSize);
 
-                // Draw item name on it
-                ctx.fillStyle = '#000'; // Text color for item
+                ctx.fillStyle = '#000';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 const itemDisplayName = getTranslation('item-' + currentItem.type);
+                const lines = itemDisplayName.split('<br>');
                 
-                let fontSize = cellSize / 2; // Start with a reasonable font size
+                let fontSize = cellSize / 2;
                 ctx.font = `${fontSize}px Arial`;
 
-                // Decrease font size until text fits
-                while (ctx.measureText(itemDisplayName).width > cellSize - 5 && fontSize > 5) {
+                let longestLine = '';
+                lines.forEach(line => {
+                    if (line.length > longestLine.length) {
+                        longestLine = line;
+                    }
+                });
+
+                while (ctx.measureText(longestLine).width > cellSize - 5 && fontSize > 5) {
                     fontSize--;
                     ctx.font = `${fontSize}px Arial`;
                 }
-                ctx.fillText(itemDisplayName, food.x * cellSize + cellSize / 2, food.y * cellSize + cellSize / 2);
+
+                let yOffset = -((lines.length - 1) * fontSize / 2) + cellSize / 2;
+                lines.forEach(line => {
+                    ctx.fillText(line, food.x * cellSize + cellSize / 2, food.y * cellSize + yOffset);
+                    yOffset += fontSize;
+                });
 
                 document.getElementById('current-item-name').textContent = getTranslation('item-display-prefix') + getTranslation('item-' + currentItem.type);
             } else {
                 document.getElementById('current-item-name').textContent = '';
             }
 
-            // Draw attack animation if active
             if (isAttacking && attackAnimationFrame < ATTACK_ANIMATION_FRAMES) {
                 ctx.fillStyle = currentColors.attack;
                 const head = dragon[0];
@@ -732,7 +717,6 @@
                     let attackY = head.y + dy * i;
 
                     if (attackX >= 0 && attackX < boardSize && attackY >= 0 && attackY < boardSize) {
-                        // Simple pulsating effect
                         const pulseScale = 1 - (attackAnimationFrame / ATTACK_ANIMATION_FRAMES) * 0.5;
                         const offset = cellSize * (1 - pulseScale) / 2;
                         ctx.fillRect(attackX * cellSize + offset, attackY * cellSize + offset, cellSize * pulseScale, cellSize * pulseScale);
@@ -748,32 +732,26 @@
 
             const head = { x: dragon[0].x + dx, y: dragon[0].y + dy };
 
-            // Check for collision with walls
             if (head.x < 0 || head.x >= boardSize || head.y < 0 || head.y >= boardSize) {
                 gameOver();
                 return;
             }
 
-            // Check for collision with self (excluding the last segment, which is about to move)
-            for (let i = 1; i < dragon.length -1; i++) { // Changed to dragon.length -1
+            for (let i = 1; i < dragon.length -1; i++) {
                 if (head.x === dragon[i].x && head.y === dragon[i].y) {
                     gameOver();
                     return;
                 }
             }
             
-            // Add new head to the beginning of the dragon array
             dragon.unshift(head);
 
-            // Item collision
             if (head.x === food.x && head.y === food.y) {
                 handleItemCollision(currentItem.type);
-                generateItem(); // Generate new item immediately after collision
-                movesSinceLastItem = 0; // Reset move counter
+                generateItem();
+                movesSinceLastItem = 0;
             } else {
-                // If no food eaten, remove the tail
                 dragon.pop();
-                // Only increment movesSinceLastItem if the dragon actually moved (dx or dy is not 0)
                 if (dx !== 0 || dy !== 0) {
                     movesSinceLastItem++;
                     if (movesSinceLastItem >= itemMovesLimit) {
@@ -783,7 +761,6 @@
                 }
             }
 
-            // Update scores
             document.getElementById('score-enemies').querySelector('span').textContent = scoreEnemies;
             document.getElementById('score-meat').querySelector('span').textContent = scoreMeat;
             document.getElementById('score-coins').querySelector('span').textContent = scoreCoins;
@@ -800,7 +777,6 @@
                 collision = dragon.some(segment => segment.x === newFood.x && segment.y === newFood.y);
             } while (collision);
 
-            // Weighted random item selection
             const totalWeight = ITEMS.reduce((sum, item) => sum + item.weight, 0);
             let randomWeight = Math.random() * totalWeight;
             let selectedItem = null;
@@ -818,33 +794,29 @@
         function handleItemCollision(itemType) {
             switch (itemType) {
                 case 'meat':
-                    // Grow dragon (don't pop tail in updateGame)
                     scoreMeat++;
-                    attackRange = Math.max(1, attackRange + 1); // Increase attack range
+                    attackRange = Math.max(1, attackRange + 1);
                     break;
                 case 'enemy':
-                    // This should ideally be handled by attack, but if dragon touches it, it's game over
                     gameOver();
                     break;
                 case 'mushroom':
-                    // Shrink dragon
                     if (dragon.length > 1) {
                         dragon.pop();
                     }
-                    attackRange = Math.max(1, attackRange - 1); // Decrease attack range, minimum 1
+                    attackRange = Math.max(1, attackRange - 1);
                     break;
                 case 'wonder-meat':
                     gameOver();
                     break;
                 case 'coin':
                     scoreCoins++;
-                    // Nothing else happens as per rules
                     break;
             }
         }
 
         function attack() {
-            if (!gameRunning || isAttacking) return; // Prevent multiple concurrent attack animations
+            if (!gameRunning || isAttacking) return;
 
             isAttacking = true;
             attackAnimationFrame = 0;
@@ -855,36 +827,33 @@
                 let targetX = head.x + dx * i;
                 let targetY = head.y + dy * i;
 
-                // Ensure target is within bounds before adding
                 if (targetX >= 0 && targetX < boardSize && targetY >= 0 && targetY < boardSize) {
                     targets.push({ x: targetX, y: targetY });
                 }
             }
 
-            // Check if any target contains an enemy
             let enemyHit = false;
             if (currentItem && currentItem.type === 'enemy') {
                 for (const target of targets) {
                     if (target.x === food.x && target.y === food.y) {
                         scoreEnemies++;
                         enemyHit = true;
-                        generateItem(); // Replace defeated enemy
-                        movesSinceLastItem = 0; // Reset move counter
+                        generateItem();
+                        movesSinceLastItem = 0;
                         break;
                     }
                 }
             }
             
-            // Advance attack animation
             function animateAttack() {
                 if (attackAnimationFrame < ATTACK_ANIMATION_FRAMES) {
                     attackAnimationFrame++;
-                    drawGame(); // Redraw with attack effect
+                    drawGame();
                     requestAnimationFrame(animateAttack);
                 } else {
                     isAttacking = false;
                     attackAnimationFrame = 0;
-                    drawGame(); // Redraw to clear attack effect
+                    drawGame();
                 }
             }
             animateAttack();
@@ -899,11 +868,9 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial setup
             loadSettings();
-            showScreen('title-screen'); // Start on title screen
+            showScreen('title-screen');
 
-            // --- Event Listeners ---
             document.getElementById('settings-button').addEventListener('click', () => showScreen('settings-screen'));
             document.getElementById('rules-button').addEventListener('click', () => showScreen('rules-screen'));
             document.getElementById('start-button').addEventListener('click', () => showScreen('start-game-screen'));
@@ -950,13 +917,13 @@
             document.addEventListener('keydown', e => {
                 if (currentScreen !== 'game-screen') return;
 
-                if (e.key === ' ' && !isAttacking) { // Space bar for attack
+                if (e.key === ' ' && !isAttacking) {
                     attack();
-                    e.preventDefault(); // Prevent page scrolling
+                    e.preventDefault();
                     return;
                 }
 
-                if (e.key === lastKeyPressed) return; // Prevent multiple moves for same key held down
+                if (e.key === lastKeyPressed) return;
 
                 let newDx = dx;
                 let newDy = dy;
@@ -983,29 +950,23 @@
                         if (dx !== -1) { newDx = 1; newDy = 0; }
                         break;
                     default:
-                        return; // Ignore other keys
+                        return;
                 }
 
-                // Only update direction if it's a valid change and not opposite of current direction
                 if (newDx !== dx || newDy !== dy) {
                     dx = newDx;
                     dy = newDy;
-                    lastMoveTime = performance.now(); // Reset last move time for next move from gameLoop
+                    lastMoveTime = performance.now();
                 }
                 lastKeyPressed = e.key;
             });
 
-            // Reset lastKeyPressed when key is released to allow re-pressing same key for next move
             document.addEventListener('keyup', e => {
                 if (e.key === lastKeyPressed) {
                     lastKeyPressed = '';
                 }
             });
         });
-
-        // Initial setup
-        // loadSettings(); // Removed as it's now inside DOMContentLoaded
-        // showScreen('title-screen'); // Start on title screen (removed as it's now inside DOMContentLoaded)
     </script>
 </body>
 </html>
