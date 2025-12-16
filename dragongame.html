@@ -105,10 +105,20 @@
             gap: 10px; /* Space between buttons */
         }
         #title-screen #start-button {
+            /* This rule is now inside .main-buttons-container styles for better encapsulation */
+        }
+        #title-screen .main-buttons-container {
+            margin-top: auto; /* Push this container to the bottom */
+            margin-bottom: 15px; /* Spacing from the bottom of the container */
+            width: 100%; /* Take full width to center its content */
+            display: flex;
+            justify-content: center; /* Center the start button horizontally */
+        }
+        #title-screen .main-buttons-container #start-button {
             display: block;
             width: 60%;
             max-width: 300px;
-            margin: auto auto 15px auto; /* Push to bottom */
+            margin: 0; /* Reset margin as centering is handled by flexbox */
         }
 
         /* Settings Screen */
@@ -164,7 +174,7 @@
              padding: 5px 0;
         }
         #rules-screen button {
-            margin-top: 20px;
+            margin-top: 30px; /* Increased margin to prevent overlap */
         }
 
         /* Difficulty Screen */
@@ -272,7 +282,9 @@
                 <button id="settings-button" data-key="settings">Settings</button>
                 <button id="rules-button" data-key="rules">Rules</button>
             </div>
-            <button id="start-button" data-key="start_game">Start Game</button>
+            <div class="main-buttons-container">
+                <button id="start-button" data-key="start_game">Start Game</button>
+            </div>
         </div>
 
         <!-- Settings Screen -->
